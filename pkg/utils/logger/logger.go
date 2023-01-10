@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hxx258456/pyramidel-chain-baas/pkg/constants"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -35,7 +36,6 @@ func CfgConsoleLogger(debugMode bool, showPath bool) {
 	level, zos := genConfigs(debugMode, showPath)
 
 	zc := zapcore.NewTee(newConsoleCore(level))
-
 	defaultLogger = zap.New(zc, zos...)
 }
 
@@ -63,7 +63,7 @@ func genConfigs(debugMode bool, showPath bool) (zapcore.LevelEnabler, []zap.Opti
 	}
 	if showPath {
 		// skip self wrapper
-		zos = append(zos, zap.AddCaller(), zap.AddCallerSkip(2))
+		zos = append(zos, zap.AddCaller(), zap.AddCallerSkip(1))
 	}
 
 	return level, zos
@@ -73,7 +73,7 @@ func newConsoleCore(le zapcore.LevelEnabler) zapcore.Core {
 	consoleLogger := zapcore.Lock(os.Stdout)
 
 	zec := zap.NewProductionEncoderConfig()
-	zec.EncodeLevel = zapcore.LowercaseColorLevelEncoder
+	zec.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	zec.EncodeTime = zapcore.ISO8601TimeEncoder
 	zec.EncodeTime = shortTimeEncoder
 	// zec.EncodeTime = zapcore.ISO8601TimeEncoder
@@ -87,10 +87,13 @@ func newConsoleCore(le zapcore.LevelEnabler) zapcore.Core {
 func newFileCore(filename string, le zapcore.LevelEnabler) zapcore.Core {
 	//TODO: export more rotate configs
 	fileLogger := zapcore.AddSync(&lumberjack.Logger{
-		Filename: filename,
-		MaxSize:  10, // megabytes per file
+		Filename:   filename,
+		MaxSize:    1, // megabytes per file
+		Compress:   true,
+		MaxAge:     14,
+		MaxBackups: 20,
+		LocalTime:  true,
 	})
-
 	zec := zap.NewProductionEncoderConfig()
 	zec.EncodeTime = zapcore.ISO8601TimeEncoder
 
@@ -98,10 +101,8 @@ func newFileCore(filename string, le zapcore.LevelEnabler) zapcore.Core {
 	return zapcore.NewCore(fileEncoder, fileLogger, le)
 }
 
-const shortTimeLayout = "2006-01-02T15:04:05"
-
 func shortTimeEncoder(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
-	enc.AppendString(t.Format(shortTimeLayout))
+	enc.AppendString(t.Format(constants.ShortTimeLayout))
 }
 
 // IsDebugMode check DebugLevel enabled
@@ -165,14 +166,16 @@ func formatLog(l zapcore.Level, f interface{}, v ...interface{}) string {
 
 func appendColor(l zapcore.Level, s string) string {
 	// default all red
-	c := uint8(31)
-	switch l {
-	case zapcore.DebugLevel:
-		c = uint8(35) // Magenta
-	case zapcore.InfoLevel:
-		c = uint8(34) // Blue
-	case zapcore.WarnLevel:
-		c = uint8(33) // Yellow
-	}
-	return fmt.Sprintf("\x1b[%dm%s\x1b[0m", c, s)
+	return s
+	// println(1)
+	// c := uint8(31)
+	// switch l {
+	// case zapcore.DebugLevel:
+	// 	c = uint8(35) // Magenta
+	// case zapcore.InfoLevel:
+	// 	c = uint8(34) // Blue
+	// case zapcore.WarnLevel:
+	// 	c = uint8(33) // Yellow
+	// }
+	// return fmt.Sprintf("\x1b[%dm%s\x1b[0m", c, s)
 }
