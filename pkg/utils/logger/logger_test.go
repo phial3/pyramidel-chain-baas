@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"sync"
 	"testing"
 )
 
@@ -26,8 +27,8 @@ func TestInfoLog(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	dir := path.Join(pwd, "testdata")
-	CfgConsoleAndFileLogger(true, dir, "log_test.log", true)
+	filepath := path.Join(pwd, "testdata", "log_test.log")
+	CfgConsoleAndFileLogger(true, filepath, true)
 
 	Info("can see me")
 	Debug("cannot see me")
@@ -92,4 +93,53 @@ func TestClean(t *testing.T) {
 			t.Error(err)
 		}
 	})
+}
+
+func TestNewLogger(t *testing.T) {
+
+	pwd, err := os.Getwd()
+	if err != nil {
+		t.Error(err)
+	}
+	filepath := path.Join(pwd, "testdata", "log_test.log")
+	CfgConsoleAndFileLogger(true, filepath, true)
+
+	// 模块化日志测试
+	logging := NewLogger("[测试]")
+	fablogging := NewLogger("[fab测试]")
+	wg := &sync.WaitGroup{}
+
+	wg.Add(1)
+	go func() {
+
+		i := 0
+		for i < 100 {
+			logging.Info("can see me")
+			logging.Debug("cannot see me")
+			logging.Warn("this is warn")
+			logging.Error("this is error: %s", errors.New("this is error"))
+			logging.Error("info %% is dead", errors.New("this is error"), 2)
+			logging.Error(errors.New("this is error"))
+			logging.Error(errors.New("this is error"), "more error")
+			i++
+		}
+		wg.Done()
+	}()
+
+	wg.Add(1)
+	go func() {
+		i := 0
+		for i < 100 {
+			fablogging.Info("can see me")
+			fablogging.Debug("cannot see me")
+			fablogging.Warn("this is warn")
+			fablogging.Error("this is error: %s", errors.New("this is error"))
+			fablogging.Error("info %% is dead", errors.New("this is error"), 2)
+			fablogging.Error(errors.New("this is error"))
+			fablogging.Error(errors.New("this is error"), "more error")
+			i++
+		}
+		wg.Done()
+	}()
+	wg.Wait()
 }

@@ -24,10 +24,20 @@ var (
 	defaultLogger *zap.Logger
 )
 
+type BLogger struct {
+	sugard *zap.SugaredLogger
+}
+
 // init default logger with only console output info above
 func init() {
 	zc := zapcore.NewTee(newConsoleCore(zap.InfoLevel))
 	defaultLogger = zap.New(zc)
+}
+
+func NewLogger(name string) BLogger {
+	return BLogger{
+		sugard: defaultLogger.Named(name).Sugar(),
+	}
 }
 
 // CfgConsoleLogger config for console logs
@@ -42,12 +52,10 @@ func CfgConsoleLogger(debugMode bool, showPath bool) {
 // TODO: export more file configs
 // CfgConsoleAndFileLogger config for both console and file logs
 // cfg donot support concurrent calls (as any package should init cfg at startup once)
-func CfgConsoleAndFileLogger(debugMode bool, logDir, name string, showPath bool) {
+func CfgConsoleAndFileLogger(debugMode bool, name string, showPath bool) {
 	level, zos := genConfigs(debugMode, showPath)
 
-	filename := fmt.Sprintf("%s/%s.log", logDir, name)
-
-	zc := zapcore.NewTee(newConsoleCore(level), newFileCore(filename, level))
+	zc := zapcore.NewTee(newConsoleCore(level), newFileCore(name, level))
 
 	defaultLogger = zap.New(zc, zos...)
 }
@@ -115,9 +123,17 @@ func Fatal(f interface{}, v ...interface{}) {
 	defaultLogger.Sugar().Fatalf(formatLog(zapcore.FatalLevel, f, v...))
 }
 
+func (b *BLogger) Fatal(f interface{}, v ...interface{}) {
+	b.sugard.Fatalf(formatLog(zapcore.FatalLevel, f, v...))
+}
+
 // Panic logs a message at emergency level and exit.
 func Panic(f interface{}, v ...interface{}) {
 	defaultLogger.Sugar().Panicf(formatLog(zapcore.PanicLevel, f, v...))
+}
+
+func (b *BLogger) Panic(f interface{}, v ...interface{}) {
+	b.sugard.Panicf(formatLog(zapcore.PanicLevel, f, v...))
 }
 
 // Error logs a message at error level.
@@ -125,9 +141,18 @@ func Error(f interface{}, v ...interface{}) {
 	defaultLogger.Sugar().Errorf(formatLog(zapcore.ErrorLevel, f, v...))
 }
 
+// Error logs a message at error level.
+func (b *BLogger) Error(f interface{}, v ...interface{}) {
+	b.sugard.Errorf(formatLog(zapcore.ErrorLevel, f, v...))
+}
+
 // Warn logs a message at warning level.
 func Warn(f interface{}, v ...interface{}) {
 	defaultLogger.Sugar().Warnf(formatLog(zapcore.WarnLevel, f, v...))
+}
+
+func (b *BLogger) Warn(f interface{}, v ...interface{}) {
+	b.sugard.Warnf(formatLog(zapcore.WarnLevel, f, v...))
 }
 
 // Info logs a message at info level.
@@ -135,9 +160,17 @@ func Info(f interface{}, v ...interface{}) {
 	defaultLogger.Sugar().Infof(formatLog(zapcore.InfoLevel, f, v...))
 }
 
+func (b *BLogger) Info(f interface{}, v ...interface{}) {
+	b.sugard.Infof(formatLog(zapcore.InfoLevel, f, v...))
+}
+
 // Debug logs a message at debug level.
 func Debug(f interface{}, v ...interface{}) {
 	defaultLogger.Sugar().Debugf(formatLog(zapcore.DebugLevel, f, v...))
+}
+
+func (b *BLogger) Debug(f interface{}, v ...interface{}) {
+	b.sugard.Debugf(formatLog(zapcore.DebugLevel, f, v...))
 }
 
 func formatLog(l zapcore.Level, f interface{}, v ...interface{}) string {
