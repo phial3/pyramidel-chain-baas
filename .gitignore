@@ -1,26 +1,34 @@
-# Intellij project files
+.#*
+*~
+*#
+/bin
+/build
+/.build
+*.cov
+/docs/build/*
+.DS_Store
+.*-dummy
+.gradle
+.idea
 *.iml
-*.ipr
-*.iws
-.idea/
-
-# go.gitignore from https://github.com/github/gitignore/blob/master/Go.gitignore
-# Binaries for programs and plugins
+*.log
+.project
+/release
+report.xml
+results.xml
+.settings
+.*.sw*
+tags
+.tags
+TESTS*.xml
+.tox/
+.vagrant/
+.vscode
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
-*.log
-
-# Test binary, built with `go test -c`
-*.test
-
-# Output of the go coverage tool, specifically when used with LiteIDE
+go.work
 *.out
-
-# Dependency directories (remove the comment below to include it)
-# 如果使用go vendor 进行构建代码
-# go.mod
-# go.sum
-# vendor/
+*.test
