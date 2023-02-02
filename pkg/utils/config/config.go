@@ -41,7 +41,8 @@ func InitViper(v *viper.Viper, configName string) error {
 	}
 
 	v.SetConfigName(configName)
-
+	v.SetConfigType("yaml") // 指定配置文件类型
+	v.AddConfigPath(".")    // 指定查找配置文件的路径（这里使用相对路径）
 	return nil
 }
 
