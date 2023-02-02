@@ -10,8 +10,8 @@ package localconfig
 
 import (
 	"fmt"
-
 	"github.com/fsnotify/fsnotify"
+	"github.com/hxx258456/pyramidel-chain-baas/configs"
 	coreconfig "github.com/hxx258456/pyramidel-chain-baas/pkg/utils/config"
 	"github.com/spf13/viper"
 )
@@ -21,11 +21,13 @@ var config *viper.Viper
 
 type (
 	TopLevel struct {
-		Logger Logger `json:"logger" yaml:"logger"`
+		Logger      Logger              `json:"logger" yaml:"logger"`
+		MySqlConfig configs.MySQLConfig `mapstructure:"MySql"`
+		RedisConfig configs.RedisConfig `mapstructure:"Redis"`
 	}
 )
 
-func init() {
+func Init() {
 	//加载配置
 	loadConfig()
 	watchConfig()
@@ -52,14 +54,14 @@ func loadConfig() {
 	}
 
 	if err := config.ReadInConfig(); err != nil {
-		fmt.Printf("Error reading configuration: %s", err)
+		fmt.Printf("Error reading configuration1: %s", err)
 		return
 	}
 	fmt.Println(config.AllSettings())
 
 	err := config.Unmarshal(&Defaultconfig)
 	if err != nil {
-		fmt.Printf("Error reading configuration: %s", err)
+		fmt.Printf("Error reading configuration2: %s", err)
 		return
 	}
 	fmt.Println(Defaultconfig)

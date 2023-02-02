@@ -1,3 +1,5 @@
+Port:
+  8080
 Logger:
   # in the same directory.  It uses <processname>-lumberjack.log in
   # os.TempDir() if empty.
@@ -14,3 +16,17 @@ Logger:
   compress: true
   # 默认使用utc时间戳,为true则使用本地时间
   localtime: true
+MySql:
+  host: "localhost"
+  port: 3306
+  user: "root"
+  password: "mysql"
+  dbname: "blue_bell"
+  max_open_conns: 200
+  max_idle_conns: 50
+Redis:
+  host: "localhost"
+  port: 6379
+  password: ""
+  db: 0
+  pool_size: 100
