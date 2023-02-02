@@ -10,8 +10,8 @@ package localconfig
 
 import (
 	"fmt"
+
 	"github.com/fsnotify/fsnotify"
-	"github.com/hxx258456/pyramidel-chain-baas/configs"
 	coreconfig "github.com/hxx258456/pyramidel-chain-baas/pkg/utils/config"
 	"github.com/spf13/viper"
 )
@@ -21,9 +21,9 @@ var config *viper.Viper
 
 type (
 	TopLevel struct {
-		Logger      Logger              `json:"logger" yaml:"logger"`
-		MySqlConfig configs.MySQLConfig `mapstructure:"MySql"`
-		RedisConfig configs.RedisConfig `mapstructure:"Redis"`
+		Logger      Logger      `json:"logger" yaml:"logger"`
+		MySqlConfig MySQLConfig `mapstructure:"MySql"`
+		RedisConfig RedisConfig `mapstructure:"Redis"`
 	}
 )
 

@@ -2,17 +2,21 @@ package main
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/hxx258456/pyramidel-chain-baas/dao/mysql"
 	"github.com/hxx258456/pyramidel-chain-baas/dao/redis"
 	"github.com/hxx258456/pyramidel-chain-baas/internal/localconfig"
 	"github.com/hxx258456/pyramidel-chain-baas/pkg/utils/logger"
 	"github.com/hxx258456/pyramidel-chain-baas/route"
-	"os"
 )
 
 func main() {
 	//1.加载配置
-	if err := os.Setenv("PYCBAAS_CFG_PATH", "E:\\Ljx\\Test\\pyramidel-chain-baas\\configs"); err != nil {
+	// if err := os.Setenv("PYCBAAS_CFG_PATH", "E:\\Ljx\\Test\\pyramidel-chain-baas\\configs"); err != nil {
+	// 	logger.Error(err)
+	// }
+	if err := os.Setenv("PYCBAAS_CFG_PATH", "E:\\github.com\\hxx258456\\pyramidel-chain-baas\\configs"); err != nil {
 		logger.Error(err)
 	}
 	localconfig.Init()
