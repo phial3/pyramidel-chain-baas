@@ -9,7 +9,6 @@
 package localconfig
 
 import (
-	"go.uber.org/zap"
 	"log"
 	"os"
 
@@ -30,7 +29,7 @@ type (
 
 func init() {
 	if err := os.Setenv("PYCBAAS_CFG_PATH", "E:\\github.com\\hxx258456\\pyramidel-chain-baas\\configs"); err != nil {
-		zap.L().Sugar().Panic(err)
+		panic(err)
 	}
 	//加载配置
 	loadConfig()
@@ -65,6 +64,13 @@ func loadConfig() {
 	if err != nil {
 		panic(err)
 	}
+
+	checkMode(Defaultconfig.Serve.Mode)
 	log.Printf("%+v", Defaultconfig)
 	log.Println()
+}
+
+// checkConfig 检查配置格式
+func checkConfig() {
+	// TODO:
 }

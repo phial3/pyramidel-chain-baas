@@ -11,16 +11,15 @@ package cacommand
 import (
 	"bytes"
 	"errors"
+	"go.uber.org/zap"
 	"os/exec"
-
-	"github.com/hxx258456/pyramidel-chain-baas/pkg/utils/logger"
 )
 
-var log = logger.NewLogger("cacommand")
+var logging = zap.L().Named("cacommand")
 
 func EnrollBootstrap(url, caname, certfiles string) error {
 	cmd := exec.Command("fabric-ca-client", "enroll", "-u", url, "--caname", caname, "--tls.certfiles", certfiles)
-	log.Info(cmd.String())
+	logging.Info(cmd.String())
 	var stdOut, stdErr bytes.Buffer
 	cmd.Stderr = &stdErr
 	cmd.Stdout = &stdOut
@@ -30,6 +29,6 @@ func EnrollBootstrap(url, caname, certfiles string) error {
 	if stdErr.Bytes() != nil {
 		return errors.New(stdErr.String())
 	}
-	log.Info(stdOut.String())
+	logging.Info(stdOut.String())
 	return nil
 }

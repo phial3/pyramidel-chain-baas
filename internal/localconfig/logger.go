@@ -19,10 +19,10 @@ type (
 		Filename string `json:"filename" yaml:"filename"`
 
 		// MaxSize 单个日志文件最大大小，以MB为单位
-		MaxSize int `json:"maxsize" yaml:"maxsize"`
+		MaxSize int `json:"maxsize" yaml:"maxsize" default:"100"`
 
 		// MaxAge 保留日志文件最大天数以自然天为单位
-		MaxAge int `json:"maxage" yaml:"maxage"`
+		MaxAge int `json:"maxage" yaml:"maxage" default:"15"`
 
 		// MaxBackups 最大备份文件数量
 		MaxBackups int `json:"maxbackups" yaml:"maxbackups"`
@@ -35,13 +35,13 @@ type (
 		Compress bool `json:"compress" yaml:"compress"`
 
 		// SkipPaths logger中间件忽略的目录
-		SkipPaths []string `json:"skippaths" yaml:"skippaths"`
+		SkipPaths []string `json:"skippaths,omitempty" yaml:"skippaths,omitempty"`
 
 		// Context trace_id
 		Context Fn `json:"-" yaml:"-"`
 
 		// Level 日志级别info,INFO,error,ERROR
-		Level string `json:"level" yaml:"level"`
+		Level string `json:"level" yaml:"level" default:"info"`
 	}
 )
 

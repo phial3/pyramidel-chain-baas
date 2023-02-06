@@ -21,7 +21,7 @@ var lg *zap.Logger
 
 // Init 初始化Logger
 func InitLogger(cfg *localconfig.Logger) {
-	writeSyncer := getLogWriter(cfg.Filename, cfg.MaxSize, cfg.MaxBackups, cfg.MaxAge)
+	writeSyncer := getLogWriter(cfg.Filename, cfg.MaxSize, cfg.MaxBackups, cfg.MaxAge, cfg.LocalTime, cfg.Compress)
 	encoder := getEncoder()
 	var l = new(zapcore.Level)
 	if err := l.UnmarshalText([]byte(cfg.Level)); err != nil {
@@ -62,14 +62,14 @@ func getEncoder() zapcore.Encoder {
 	return zapcore.NewJSONEncoder(encoderConfig)
 }
 
-func getLogWriter(filename string, maxSize, maxBackup, maxAge int) zapcore.WriteSyncer {
+func getLogWriter(filename string, maxSize, maxBackup, maxAge int, localtime, compress bool) zapcore.WriteSyncer {
 	lumberJackLogger := &lumberjack.Logger{
 		Filename:   filename,
 		MaxSize:    maxSize,
 		MaxBackups: maxBackup,
 		MaxAge:     maxAge,
-		LocalTime:  true,
-		Compress:   true,
+		LocalTime:  localtime,
+		Compress:   compress,
 	}
 	return zapcore.AddSync(lumberJackLogger)
 }
