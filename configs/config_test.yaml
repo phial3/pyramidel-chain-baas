@@ -1,10 +1,11 @@
-Port:
-  8080
+Serve:
+  mode: release
+  port: :8080
 Logger:
   # in the same directory.  It uses <processname>-lumberjack.log in
   # os.TempDir() if empty.
   # example: /var/log/test.log
-  filename: test.log
+  filename: E:\\github.com\\hxx258456\\pyramidel-chain-baas\\log\\serve.log
   # MaxSize is the maximum size in megabytes of the log file before it gets
   # rotated. It defaults to 100 megabytes.
   maxsize: 50
@@ -16,17 +17,9 @@ Logger:
   compress: true
   # 默认使用utc时间戳,为true则使用本地时间
   localtime: true
-MySql:
-  host: "localhost"
-  port: 3306
-  user: "root"
-  password: "mysql"
-  dbname: "blue_bell"
-  max_open_conns: 200
-  max_idle_conns: 50
-Redis:
-  host: "localhost"
-  port: 6379
-  password: ""
-  db: 0
-  pool_size: 100
+  # 日志级别全部小写或全部大写
+  # 日志级别参照uber-zap
+  level: info
+  # 日志中间件忽略的gin路由
+  skippaths:
+    - /test

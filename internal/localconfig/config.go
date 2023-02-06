@@ -9,7 +9,9 @@
 package localconfig
 
 import (
-	"fmt"
+	"go.uber.org/zap"
+	"log"
+	"os"
 
 	"github.com/fsnotify/fsnotify"
 	coreconfig "github.com/hxx258456/pyramidel-chain-baas/pkg/utils/config"
@@ -21,13 +23,15 @@ var config *viper.Viper
 
 type (
 	TopLevel struct {
-		Logger      Logger      `json:"logger" yaml:"logger"`
-		MySqlConfig MySQLConfig `mapstructure:"MySql"`
-		RedisConfig RedisConfig `mapstructure:"Redis"`
+		Logger Logger `json:"logger" yaml:"logger"`
+		Serve  Serve  `json:"serve" yaml:"serve"`
 	}
 )
 
-func Init() {
+func init() {
+	if err := os.Setenv("PYCBAAS_CFG_PATH", "E:\\github.com\\hxx258456\\pyramidel-chain-baas\\configs"); err != nil {
+		zap.L().Sugar().Panic(err)
+	}
 	//加载配置
 	loadConfig()
 	watchConfig()
@@ -54,15 +58,13 @@ func loadConfig() {
 	}
 
 	if err := config.ReadInConfig(); err != nil {
-		fmt.Printf("Error reading configuration1: %s", err)
-		return
+		panic(err)
 	}
-	fmt.Println(config.AllSettings())
 
 	err := config.Unmarshal(&Defaultconfig)
 	if err != nil {
-		fmt.Printf("Error reading configuration2: %s", err)
-		return
+		panic(err)
 	}
-	fmt.Println(Defaultconfig)
+	log.Printf("%+v", Defaultconfig)
+	log.Println()
 }

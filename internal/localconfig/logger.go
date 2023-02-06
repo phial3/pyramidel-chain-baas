@@ -8,36 +8,41 @@
 
 package localconfig
 
+import (
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap/zapcore"
+)
+
 type (
 	Logger struct {
-		// Filename is the file to write logs to.  Backup log files will be retained
-		// in the same directory.  It uses <processname>-lumberjack.log in
-		// os.TempDir() if empty.
+		// Filename 日志文件存放路径,默认为<processname>-lumberjack.log in os.TempDir()
 		Filename string `json:"filename" yaml:"filename"`
 
-		// MaxSize is the maximum size in megabytes of the log file before it gets
-		// rotated. It defaults to 100 megabytes.
+		// MaxSize 单个日志文件最大大小，以MB为单位
 		MaxSize int `json:"maxsize" yaml:"maxsize"`
 
-		// MaxAge is the maximum number of days to retain old log files based on the
-		// timestamp encoded in their filename.  Note that a day is defined as 24
-		// hours and may not exactly correspond to calendar days due to daylight
-		// savings, leap seconds, etc. The default is not to remove old log files
-		// based on age.
+		// MaxAge 保留日志文件最大天数以自然天为单位
 		MaxAge int `json:"maxage" yaml:"maxage"`
 
-		// MaxBackups is the maximum number of old log files to retain.  The default
-		// is to retain all old log files (though MaxAge may still cause them to get
-		// deleted.)
+		// MaxBackups 最大备份文件数量
 		MaxBackups int `json:"maxbackups" yaml:"maxbackups"`
 
-		// LocalTime determines if the time used for formatting the timestamps in
-		// backup files is the computer's local time.  The default is to use UTC
-		// time.
+		// LocalTime 是否使用计算机本地时间,默认使用UTC
 		LocalTime bool `json:"localtime" yaml:"localtime"`
 
-		// Compress determines if the rotated log files should be compressed
-		// using gzip. The default is not to perform compression.
+		// Compress 是否压缩文件
+		// TODO: 添加压缩算法选择gzip g4
 		Compress bool `json:"compress" yaml:"compress"`
+
+		// SkipPaths logger中间件忽略的目录
+		SkipPaths []string `json:"skippaths" yaml:"skippaths"`
+
+		// Context trace_id
+		Context Fn `json:"-" yaml:"-"`
+
+		// Level 日志级别info,INFO,error,ERROR
+		Level string `json:"level" yaml:"level"`
 	}
 )
+
+type Fn func(c *gin.Context) []zapcore.Field
