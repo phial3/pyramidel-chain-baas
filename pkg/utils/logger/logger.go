@@ -17,7 +17,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var lg *zap.Logger
+var Lg *zap.Logger
 
 // InitLogger 初始化Logger
 func InitLogger(cfg *localconfig.Logger) {
@@ -30,8 +30,8 @@ func InitLogger(cfg *localconfig.Logger) {
 	flcore := zapcore.NewCore(encoder, writeSyncer, l)
 	slcore := newConsoleCore(l)
 	core := zapcore.NewTee(flcore, slcore)
-	lg = zap.New(core, zap.AddCaller())
-	zap.ReplaceGlobals(lg) // 替换zap包中全局的logger实例，后续在其他包中只需使用zap.L()调用即可
+	Lg = zap.New(core, zap.AddCaller())
+	zap.ReplaceGlobals(Lg) // 替换zap包中全局的logger实例，后续在其他包中只需使用zap.L()调用即可
 	return
 }
 

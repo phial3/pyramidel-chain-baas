@@ -3,11 +3,11 @@ package host
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/hxx258456/pyramidel-chain-baas/pkg/remotessh"
-	"go.uber.org/zap"
+	"github.com/hxx258456/pyramidel-chain-baas/pkg/utils/logger"
 	"net/http"
 )
 
-var hostLogger = zap.L().Named("api/host")
+var hostLogger = logger.Lg.Named("api/host")
 
 type Host struct {
 	Ip      string `json:"ip" binding:"required"`   // ip地址
@@ -33,14 +33,17 @@ func Add(ctx *gin.Context) {
 		resp.Code = 0
 		resp.Msg = err.Error()
 		ctx.JSON(http.StatusOK, resp)
+		ctx.Error(err)
 		return
 	}
 
 	client, err := remotessh.ConnectToHost(param.Pw, param.Ip, param.SSHPort)
 	if err != nil {
+		hostLogger.Error(err.Error())
 		resp.Code = 0
 		resp.Msg = err.Error()
 		ctx.JSON(http.StatusOK, resp)
+		ctx.Error(err)
 		return
 	}
 	defer func() {
@@ -48,13 +51,25 @@ func Add(ctx *gin.Context) {
 			hostLogger.Error(err.Error())
 		}
 	}()
-	out, err := client.Run("ls -al")
+	out, err := client.Run("curl -sSL https://d.juicefs.com/install | sh -")
 	if err != nil {
 		resp.Code = 0
 		resp.Msg = err.Error()
 		ctx.JSON(http.StatusOK, resp)
+		ctx.Error(err)
 		return
 	}
-	ctx.String(http.StatusOK, string(out))
+	hostLogger.Info(string(out))
+	mountOut, err := client.Run("juicefs mount --background --cache-size 512000 redis://:Txhy2020@39.100.224.84:7000/1 /root/txhyjuicefs")
+	if err != nil {
+		resp.Code = 0
+		resp.Msg = err.Error()
+		ctx.JSON(http.StatusOK, resp)
+		ctx.Error(err)
+		return
+	}
+	hostLogger.Info(string(mountOut))
+	resp.Code = 1
+	ctx.JSON(http.StatusOK, resp)
 	return
 }
