@@ -19,10 +19,10 @@ type (
 		Filename string `json:"filename" yaml:"filename"`
 
 		// MaxSize 单个日志文件最大大小，以MB为单位
-		MaxSize int `json:"maxsize" yaml:"maxsize" default:"100"`
+		MaxSize int `json:"maxsize" yaml:"maxsize"`
 
 		// MaxAge 保留日志文件最大天数以自然天为单位
-		MaxAge int `json:"maxage" yaml:"maxage" default:"15"`
+		MaxAge int `json:"maxage" yaml:"maxage"`
 
 		// MaxBackups 最大备份文件数量
 		MaxBackups int `json:"maxbackups" yaml:"maxbackups"`
@@ -34,10 +34,10 @@ type (
 		// TODO: 添加压缩算法选择gzip g4
 		Compress bool `json:"compress" yaml:"compress"`
 
-		// SkipPaths logger中间件忽略的目录
+		// SkipPaths logger中间件忽略的请求路由,无效路由会被抛弃
 		SkipPaths []string `json:"skippaths,omitempty" yaml:"skippaths,omitempty"`
 
-		// Context trace_id
+		// Context trace跟踪
 		Context Fn `json:"-" yaml:"-"`
 
 		// Level 日志级别info,INFO,error,ERROR
@@ -46,3 +46,5 @@ type (
 )
 
 type Fn func(c *gin.Context) []zapcore.Field
+
+func (l *Logger) check() {}

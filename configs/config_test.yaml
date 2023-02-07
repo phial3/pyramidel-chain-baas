@@ -12,7 +12,7 @@ Logger:
   # 旧日志文件保存的最大天数,天为单位
   maxage: 25
   # 保留的旧日志文件最大数量
-  #  maxbackups: 50
+  maxbackups: 50
   #   是否压缩日志文件,目前只支持gzip压缩
   compress: true
   # 默认使用utc时间戳,为true则使用本地时间

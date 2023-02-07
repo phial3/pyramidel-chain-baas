@@ -19,7 +19,7 @@ import (
 
 var lg *zap.Logger
 
-// Init 初始化Logger
+// InitLogger 初始化Logger
 func InitLogger(cfg *localconfig.Logger) {
 	writeSyncer := getLogWriter(cfg.Filename, cfg.MaxSize, cfg.MaxBackups, cfg.MaxAge, cfg.LocalTime, cfg.Compress)
 	encoder := getEncoder()

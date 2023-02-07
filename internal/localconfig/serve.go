@@ -5,8 +5,8 @@ type Serve struct {
 	Port string `json:"port" yaml:"port"`
 }
 
-func checkMode(mode string) {
-	switch mode {
+func (s *Serve) check() {
+	switch s.Mode {
 	case "debug":
 	case "release":
 	case "test":

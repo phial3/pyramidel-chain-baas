@@ -17,7 +17,20 @@ import (
 	"github.com/spf13/viper"
 )
 
-var Defaultconfig TopLevel
+var Defaultconfig = TopLevel{
+	Logger: Logger{
+		MaxAge:     15,
+		MaxBackups: 3,
+		MaxSize:    500,
+		Level:      "info",
+		Compress:   true,
+		LocalTime:  true,
+	},
+	Serve: Serve{
+		Mode: "debug",
+		Port: ":8080",
+	},
+}
 var config *viper.Viper
 
 type (
@@ -65,12 +78,13 @@ func loadConfig() {
 		panic(err)
 	}
 
-	checkMode(Defaultconfig.Serve.Mode)
+	Defaultconfig.check()
 	log.Printf("%+v", Defaultconfig)
 	log.Println()
 }
 
 // checkConfig 检查配置格式
-func checkConfig() {
-	// TODO:
+func (t *TopLevel) check() {
+	t.Serve.check()
+	t.Logger.check()
 }
