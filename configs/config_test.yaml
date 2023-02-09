@@ -19,7 +19,16 @@ Logger:
   localtime: true
   # 日志级别全部小写或全部大写
   # 日志级别参照uber-zap
-  level: info
+  level: debug
   # 日志中间件忽略的gin路由
   skippaths:
     - /test
+mysql:
+  host: 8.142.113.6
+  port: 3306
+  user: root
+  password: Txhy2020
+  db: baas-go
+  charset: utf8
+  loc: true
+  parsetime: true

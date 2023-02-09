@@ -163,6 +163,9 @@ EOF
     ],
     "registry-mirrors": [
         "https://yssx4sxy.mirror.aliyuncs.com/"
+    ],
+    "insecure-registries": [
+        "harbor.sxtxhy.com"
     ]
 }
 EOF
@@ -313,5 +316,7 @@ EOF
   sed -ri '/^[^#]*swap/s@^@#@' /etc/fstab
 }
 
-check::command
 init_host
+[ -f "$(which docker)" ] && yum remove -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin.x86_64
+check::command
+

@@ -23,7 +23,7 @@ func Serve() {
 	r := gin.New()
 	gin.SetMode(localconfig.Defaultconfig.Serve.Mode)
 
-	r.Use(logger.GinzapWithConfig(ginLogger, &localconfig.Defaultconfig.Logger), logger.RecoveryWithZap(ginLogger, true))
+	r.Use(logger.GinLogger(ginLogger, &localconfig.Defaultconfig.Logger), logger.RecoveryWithZap(ginLogger, true))
 
 	routers.Include(scadmin.Routers, host.Routers)
 	routers.Init(r)

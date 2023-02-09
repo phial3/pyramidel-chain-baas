@@ -30,6 +30,15 @@ var Defaultconfig = TopLevel{
 		Mode: "debug",
 		Port: ":8080",
 	},
+	Mysql: Mysql{
+		Host:      "localhost",
+		Port:      3306,
+		User:      "root",
+		Password:  "123456",
+		Parsetime: true,
+		Loc:       true,
+		Charset:   "utf8_unicode_ci",
+	},
 }
 var config *viper.Viper
 
@@ -37,6 +46,7 @@ type (
 	TopLevel struct {
 		Logger Logger `json:"logger" yaml:"logger"`
 		Serve  Serve  `json:"serve" yaml:"serve"`
+		Mysql  Mysql  `json:"mysql" yaml:"mysql"`
 	}
 )
 
