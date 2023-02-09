@@ -7,7 +7,6 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/gin-gonic/gin v1.8.2
 	github.com/go-ping/ping v1.1.0
-	github.com/jinzhu/copier v0.3.5
 	github.com/melbahja/goph v1.3.0
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/spf13/cast v1.5.0
