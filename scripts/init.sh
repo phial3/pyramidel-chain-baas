@@ -217,7 +217,7 @@ function init_host() {
   # 设置最大打开文件数
   if ! grep "* soft nofile 65535" /etc/security/limits.conf &>/dev/null; then
     cat >>/etc/security/limits.conf <<EOF
-## Kainstall managed start
+## PYC baas start
 root soft nofile 655360
 root hard nofile 655360
 root soft nproc 655360
