@@ -32,3 +32,4 @@ TESTS*.xml
 go.work
 *.out
 *.test
+config.yaml

@@ -29,6 +29,12 @@ var Defaultconfig = TopLevel{
 	Serve: Serve{
 		Mode: "debug",
 		Port: ":8080",
+		IpWhiteList: []string{
+			"127.0.0.1",
+			"localhost",
+			"192.168.0.1",
+			"172.17.0.1",
+		},
 	},
 	Mysql: Mysql{
 		Host:      "localhost",
@@ -75,7 +81,7 @@ func watchConfig() {
 func loadConfig() {
 	config = viper.New()
 
-	if err := coreconfig.InitViper(config, "config_test"); err != nil {
+	if err := coreconfig.InitViper(config, "config"); err != nil {
 		panic(err)
 	}
 

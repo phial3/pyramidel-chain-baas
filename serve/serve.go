@@ -23,7 +23,7 @@ func Serve() {
 	r := gin.New()
 	gin.SetMode(localconfig.Defaultconfig.Serve.Mode)
 
-	r.Use(logger.GinLogger(ginLogger, &localconfig.Defaultconfig.Logger), logger.RecoveryWithZap(ginLogger, true))
+	r.Use(whiteListIp(&localconfig.Defaultconfig.Serve), logger.GinLogger(ginLogger, &localconfig.Defaultconfig.Logger), logger.RecoveryWithZap(ginLogger, true))
 
 	routers.Include(scadmin.Routers, host.Routers)
 	routers.Init(r)
@@ -54,4 +54,18 @@ func Serve() {
 		ginLogger.Fatal("Server Shutdown:", zap.Error(err))
 	}
 	ginLogger.Info("Server exiting")
+}
+
+func whiteListIp(conf *localconfig.Serve) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ipWhiteList := map[string]bool{}
+		for _, v := range conf.IpWhiteList {
+			ipWhiteList[v] = true
+		}
+		if !ipWhiteList[c.ClientIP()] {
+			ginLogger.Debug("invalid IP: " + c.ClientIP())
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"stats": http.StatusForbidden, "msg": "Permission denied"})
+		}
+		c.Next()
+	}
 }
