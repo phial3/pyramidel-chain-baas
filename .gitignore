@@ -33,3 +33,4 @@ go.work
 *.out
 *.test
 config.yaml
+.run

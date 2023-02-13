@@ -7,4 +7,5 @@ func Routers(e *gin.RouterGroup) {
 	scaGroup.POST("/new", Add)
 	scaGroup.POST("/verify", Verify)
 	scaGroup.GET("/list", List)
+	scaGroup.GET("/gerResource", GetResource)
 }

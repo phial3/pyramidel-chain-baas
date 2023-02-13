@@ -43,6 +43,13 @@ func (Host) QueryAll(result interface{}) error {
 	return nil
 }
 
+func (Host) QueryById(id int, result interface{}) error {
+	if err := db.Where("id = ?", id).Find(&result).Error; err != nil {
+		return db.Error
+	}
+	return nil
+}
+
 func (Host) TableName() string {
 	return "baas_host"
 }

@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/hxx258456/pyramidel-chain-baas/model"
+	"github.com/hxx258456/pyramidel-chain-baas/pkg/jsonrpcClient"
 	"github.com/hxx258456/pyramidel-chain-baas/pkg/remotessh"
 	"github.com/hxx258456/pyramidel-chain-baas/pkg/utils/logger"
 	"github.com/melbahja/goph"
+	"go.uber.org/zap"
 	"net/http"
+	"strconv"
 )
 
 var hostLogger = logger.Lg.Named("api/host")
@@ -157,6 +160,55 @@ func List(ctx *gin.Context) {
 	}
 	resp.Code = 1
 	resp.Data = result
+	ctx.JSON(http.StatusOK, resp)
+	return
+}
+
+//GetResource 获取服务器资源实时信息
+func GetResource(ctx *gin.Context) {
+	queryId := ctx.Query("id")
+	resp := Response{}
+	id, err := strconv.Atoi(queryId)
+	if err != nil {
+		resp.Code = 0
+		resp.Msg = err.Error()
+		resp.Data = nil
+		ctx.JSON(http.StatusOK, resp)
+		return
+	}
+	host := &model.Host{}
+	if err := host.QueryById(id, host); err != nil {
+		resp.Code = 0
+		resp.Msg = err.Error()
+		resp.Data = nil
+		ctx.JSON(http.StatusOK, resp)
+		return
+	}
+	hostLogger.Info(" :::::::::::::::", zap.Any("host", host))
+	address := fmt.Sprintf("%s:%d", host.PublicIp, 8082)
+	cli, err := jsonrpcClient.ConnetJsonrpc(address)
+	if err != nil {
+		resp.Code = 0
+		resp.Msg = err.Error()
+		resp.Data = nil
+		ctx.JSON(http.StatusOK, resp)
+		return
+	}
+	defer func() {
+		if err := cli.Close(); err != nil {
+			hostLogger.Error("关闭grpc客户端时发生错误", zap.Error(err))
+		}
+	}()
+	checkInfo, err := jsonrpcClient.CallPsutil(cli)
+	if err != nil {
+		resp.Code = 0
+		resp.Msg = err.Error()
+		resp.Data = nil
+		ctx.JSON(http.StatusOK, resp)
+		return
+	}
+	resp.Code = 1
+	resp.Data = checkInfo
 	ctx.JSON(http.StatusOK, resp)
 	return
 }

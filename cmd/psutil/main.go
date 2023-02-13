@@ -1,7 +1,9 @@
 package main
 
-import "github.com/hxx258456/pyramidel-chain-baas/pkg/utils/psutil"
+import (
+	"github.com/hxx258456/pyramidel-chain-baas/pkg/psutil/serve"
+)
 
 func main() {
-	psutil.CheckHost()
+	serve.Serve()
 }

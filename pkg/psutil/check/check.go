@@ -1,4 +1,4 @@
-package psutil
+package check
 
 import (
 	"encoding/json"
@@ -10,14 +10,15 @@ import (
 	"github.com/shirou/gopsutil/v3/host"
 	"github.com/shirou/gopsutil/v3/load"
 	"github.com/shirou/gopsutil/v3/mem"
+	"github.com/shirou/gopsutil/v3/net"
 	"time"
 )
 
 const (
-	B  = 1
-	KB = 1024 * B
-	MB = 1024 * KB
-	GB = 1024 * MB
+	B  = 1 << 0
+	KB = 1 << 10
+	MB = 1 << 20
+	GB = 1 << 30
 )
 
 type HostInfo struct {
@@ -25,6 +26,8 @@ type HostInfo struct {
 	InfoStat    InfoStat    `json:"infoStat"`    // 主机信息
 	CpuInfoStat CpuInfoStat `json:"cpuInfoStat"` // cpu信息
 	MemStat     MemStat     `json:"memStat"`     // 内存使用情况
+	PacketsSent uint64      `json:"packetSent"`  // 上行实时流量
+	PacketsRecv uint64      `json:"packetRecv"`  // 下行实时流量
 }
 
 //UsageStat 硬盘使用信息
@@ -85,26 +88,27 @@ type MemStat struct {
 }
 
 //DiskCheck 服务器硬盘使用量
-func DiskCheck() UsageStat {
+func DiskCheck() (UsageStat, error) {
+	var usage = UsageStat{}
 	u, err := disk.Usage("/")
 	if err != nil {
-		panic(err)
+		return usage, err
 	}
-	var usage = UsageStat{}
+
 	if err := copier.Copy(&usage, u); err != nil {
-		panic(err)
+		return usage, err
 	}
-	return usage
+	return usage, nil
 }
 
 //OSCheck 内核检测 操作系统信息获取
-func OSCheck() InfoStat {
-
+func OSCheck() (InfoStat, error) {
+	var statInfo = InfoStat{}
 	info, err := host.Info()
 	if err != nil {
-		panic(err)
+		return statInfo, err
 	}
-	var statInfo = InfoStat{}
+
 	statInfo.Uptime = info.Uptime / (60 * 60 * 24)
 	statInfo.OS = fmt.Sprintf("%s %s %s %s", info.Platform, info.OS, info.PlatformFamily, info.PlatformVersion)
 	statInfo.Procs = info.Procs
@@ -112,22 +116,25 @@ func OSCheck() InfoStat {
 	statInfo.KernelArch = info.KernelArch
 	statInfo.Hostname = info.Hostname
 	statInfo.BootTime = time.Unix(int64(info.BootTime), 0).Format("2006-01-02 15:04:05")
-	statInfo.DockerNum = checkDocker()
-	return statInfo
+	if statInfo.DockerNum, err = checkDocker(); err != nil {
+		return statInfo, err
+	}
+	return statInfo, nil
 }
 
 // CPUCheck cpu使用量
-func CPUCheck() CpuInfoStat {
+func CPUCheck() (CpuInfoStat, error) {
+	var cpuInfo CpuInfoStat
 	cpus, err := cpu.Info()
 	if err != nil {
-		panic(err)
+		return cpuInfo, err
 	}
-	var cpuInfo CpuInfoStat
+
 	cpuInfo.Cores = []CoreInfoStat{}
 
 	pers, err := cpu.Percent(1*time.Second, true)
 	if err != nil {
-		panic(err)
+		return cpuInfo, err
 	}
 	for i, v := range cpus {
 		cpuInfo.Cores = append(cpuInfo.Cores, CoreInfoStat{
@@ -140,47 +147,75 @@ func CPUCheck() CpuInfoStat {
 	}
 	a, err := load.Avg()
 	if err != nil {
-		panic(err)
+		return cpuInfo, err
 	}
 	cpuInfo.Load1 = a.Load1
 	cpuInfo.Load5 = a.Load5
 	cpuInfo.Load15 = a.Load15
-	return cpuInfo
+	return cpuInfo, nil
 }
 
 // RAMCheck 内存使用量
-func RAMCheck() MemStat {
+func RAMCheck() (MemStat, error) {
+	memStat := MemStat{}
 	u, err := mem.VirtualMemory()
 	if err != nil {
-		panic(err)
+		return memStat, err
 	}
-	memStat := MemStat{}
+
 	if err := copier.Copy(&memStat, u); err != nil {
-		panic(err)
+		return memStat, err
 	}
 	memStat.Used /= MB
 	memStat.Total /= MB
 	memStat.Available /= MB
-	return memStat
+	return memStat, nil
 }
 
-func checkDocker() int {
+func checkDocker() (int, error) {
 	ids, err := docker.GetDockerIDList()
 	if err != nil {
-		panic(err)
+		return 0, err
 	}
-	return len(ids)
+	return len(ids), nil
 }
 
-func CheckHost() {
+func checkIOCounters(info *HostInfo) error {
+	IOCounters, err := net.IOCounters(true)
+	if err != nil {
+		return err
+	}
+	for _, v := range IOCounters {
+		if v.Name == "eth0" {
+			info.PacketsSent = v.PacketsSent / MB
+			info.PacketsRecv = v.PacketsRecv / MB
+		}
+	}
+	return nil
+}
+
+func CheckHost() (HostInfo, error) {
 	host := HostInfo{}
-	host.MemStat = RAMCheck()
-	host.CpuInfoStat = CPUCheck()
-	host.InfoStat = OSCheck()
-	host.UsageStat = DiskCheck()
+	var err error
+	if host.MemStat, err = RAMCheck(); err != nil {
+		return host, err
+	}
+	if host.CpuInfoStat, err = CPUCheck(); err != nil {
+		return host, err
+	}
+	if host.InfoStat, err = OSCheck(); err != nil {
+		return host, err
+	}
+	if host.UsageStat, err = DiskCheck(); err != nil {
+		return host, err
+	}
+	if err = checkIOCounters(&host); err != nil {
+		return host, err
+	}
 	b, err := json.Marshal(host)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println(string(b))
+	return host, nil
 }
