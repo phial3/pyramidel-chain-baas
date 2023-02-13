@@ -1,4 +1,4 @@
-package serve
+package psutilserve
 
 import (
 	"flag"

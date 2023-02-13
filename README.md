@@ -14,8 +14,9 @@
 
 ## 端口占用情况
 
-| http serve | 8080 |
+| serve | port |
 | :------------: | :--: |
+| http serve | 8080 |
 | jsonrpc server | 8082 |
 | docker daemon | 2375 |
 

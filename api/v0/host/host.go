@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/hxx258456/pyramidel-chain-baas/model"
 	"github.com/hxx258456/pyramidel-chain-baas/pkg/jsonrpcClient"
+	psutilclient "github.com/hxx258456/pyramidel-chain-baas/pkg/psutil/client"
 	"github.com/hxx258456/pyramidel-chain-baas/pkg/remotessh"
 	"github.com/hxx258456/pyramidel-chain-baas/pkg/utils/logger"
 	"github.com/melbahja/goph"
@@ -184,7 +185,7 @@ func GetResource(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, resp)
 		return
 	}
-	hostLogger.Info(" :::::::::::::::", zap.Any("host", host))
+	hostLogger.Debug(" :::::::::::::::", zap.Any("host", host))
 	address := fmt.Sprintf("%s:%d", host.PublicIp, 8082)
 	cli, err := jsonrpcClient.ConnetJsonrpc(address)
 	if err != nil {
@@ -199,7 +200,7 @@ func GetResource(ctx *gin.Context) {
 			hostLogger.Error("关闭grpc客户端时发生错误", zap.Error(err))
 		}
 	}()
-	checkInfo, err := jsonrpcClient.CallPsutil(cli)
+	checkInfo, err := psutilclient.CallPsutil(cli)
 	if err != nil {
 		resp.Code = 0
 		resp.Msg = err.Error()
