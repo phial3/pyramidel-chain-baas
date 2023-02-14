@@ -34,3 +34,4 @@ go.work
 *.test
 config.yaml
 .run
+go_run_*

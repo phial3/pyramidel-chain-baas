@@ -3,12 +3,11 @@ package serve
 import (
 	"context"
 	"github.com/gin-gonic/gin"
-	"github.com/hxx258456/pyramidel-chain-baas/api/v0/host"
-	"github.com/hxx258456/pyramidel-chain-baas/api/v0/scadmin"
+	"github.com/hxx258456/pyramidel-chain-baas/controller/host"
 	"github.com/hxx258456/pyramidel-chain-baas/internal/localconfig"
+	"github.com/hxx258456/pyramidel-chain-baas/internal/routers"
 	"github.com/hxx258456/pyramidel-chain-baas/internal/version"
 	"github.com/hxx258456/pyramidel-chain-baas/pkg/utils/logger"
-	"github.com/hxx258456/pyramidel-chain-baas/routers"
 	"go.uber.org/zap"
 	"net/http"
 	"os"
@@ -25,7 +24,7 @@ func Serve() {
 
 	r.Use(whiteListIp(&localconfig.Defaultconfig.Serve), logger.GinLogger(ginLogger, &localconfig.Defaultconfig.Logger), logger.RecoveryWithZap(ginLogger, true))
 
-	routers.Include(scadmin.Routers, host.Routers)
+	routers.Include(host.Routers)
 	routers.Init(r)
 	zap.L().Info(" ", zap.String("version", version.Version))
 	srv := http.Server{

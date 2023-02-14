@@ -9,12 +9,10 @@
 package localconfig
 
 import (
-	"log"
-	"os"
-
 	"github.com/fsnotify/fsnotify"
 	coreconfig "github.com/hxx258456/pyramidel-chain-baas/pkg/utils/config"
 	"github.com/spf13/viper"
+	"log"
 )
 
 var Defaultconfig = TopLevel{
@@ -57,9 +55,9 @@ type (
 )
 
 func init() {
-	if err := os.Setenv("PYCBAAS_CFG_PATH", "E:\\github.com\\hxx258456\\pyramidel-chain-baas\\configs"); err != nil {
-		panic(err)
-	}
+	//if err := os.Setenv("PYCBAAS_CFG_PATH", "E:\\github.com\\hxx258456\\pyramidel-chain-baas\\configs"); err != nil {
+	//	panic(err)
+	//}
 	//加载配置
 	loadConfig()
 	watchConfig()

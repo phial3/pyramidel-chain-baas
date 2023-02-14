@@ -316,7 +316,27 @@ EOF
   sed -ri '/^[^#]*swap/s@^@#@' /etc/fstab
 }
 
+function juicefs::mount() {
+  juicefs mount --background --cache-size 512000 redis://:Txhy2020@39.100.224.84:7000/1 /root/txhyjuicefs
+
+  cp /usr/local/bin/juicefs /sbin/mount.juicefs
+
+  cat >>/etc/fstab <<EOF
+redis://:Txhy2020@39.100.224.84:7000/1    ~/txhyjuicefs       juicefs     _netdev,max-uploads=50,writeback,cache-size=512000     0  0
+EOF
+}
+
+function psutil::up() {
+  if [ -f /root/txhyjuicefs/psutil/linux/psutil ]; then
+    nohup /root/txhyjuicefs/psutil/linux/psutil -port=8082 >nohub.out 2>&1 &
+  else
+    echo "不存在,处理"
+  fi
+  netstat -nultp | grep 8082
+}
+
 init_host
 [ -f "$(which docker)" ] && yum remove -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin.x86_64
 check::command
-
+juicefs::mount
+psutil::up

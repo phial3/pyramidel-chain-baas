@@ -36,14 +36,14 @@ func (h *Host) Update(val Host) error {
 	return nil
 }
 
-func (Host) QueryAll(result interface{}) error {
+func (h *Host) QueryAll(result interface{}) error {
 	if db.Find(result).Error != nil {
 		return db.Error
 	}
 	return nil
 }
 
-func (Host) QueryById(id int, result interface{}) error {
+func (h *Host) QueryById(id int, result interface{}) error {
 	if err := db.Where("id = ?", id).Find(&result).Error; err != nil {
 		return db.Error
 	}
