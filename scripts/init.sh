@@ -266,6 +266,7 @@ net.ipv4.tcp_max_syn_backlog = 16384        #增大SYN队列的长度，容纳�
 net.ipv4.tcp_timestamps = 0        #TCP时间戳
 net.core.somaxconn = 16384       #已经成功建立连接的套接字将要进入队列的长度
 EOF
+  sysctl -w net.ipv4.ping_group_range="0 2147483647"
   sysctl --system
 
   #配置下载源
@@ -328,9 +329,10 @@ EOF
 
 function psutil::up() {
   if [ -f /root/txhyjuicefs/psutil/linux/psutil ]; then
-    nohup /root/txhyjuicefs/psutil/linux/psutil -port=8082 >nohub.out 2>&1 &
-  else
-    echo "不存在,处理"
+    cat >>/etc/rc.local <<EOF
+nohup /root/txhyjuicefs/psutil/linux/psutil -port=8082 >/root/psutil.log 2>&1 &
+EOF
+    nohup /root/txhyjuicefs/psutil/linux/psutil -port=8082 >/root/psutil.log 2>&1 &
   fi
   netstat -nultp | grep 8082
 }

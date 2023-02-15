@@ -62,8 +62,10 @@ func (s *hostService) Verify(param *model.Host) (ip string, covRtt int64, err er
 // Add 异步添加新主机
 func (s *hostService) Add(param *model.Host) error {
 	iipRtt := remotessh.Ping(param.IntranetIp)
+	hostLogger.Debug("", zap.Int64("iipRtt", iipRtt))
 	if iipRtt <= 0 {
 		pipRtt := remotessh.Ping(param.PublicIp)
+		hostLogger.Debug("", zap.Int64("pipRtt", pipRtt))
 		if pipRtt <= 0 {
 			return errors.New("invalid publicIp and internalIp")
 		} else {
@@ -76,6 +78,7 @@ func (s *hostService) Add(param *model.Host) error {
 	if err != nil {
 		return err
 	}
+
 	s.repo = param
 	if err := s.repo.Create(); err != nil {
 		return err

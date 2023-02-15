@@ -1,9 +1,9 @@
 package remotessh
 
 import (
-	"github.com/go-ping/ping"
 	"github.com/hxx258456/pyramidel-chain-baas/pkg/utils/logger"
 	"github.com/melbahja/goph"
+	probing "github.com/prometheus-community/pro-bing"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh"
 	"net"
@@ -66,45 +66,39 @@ func CheckCommand(command string, client *goph.Client) (bool, error) {
 }
 
 func InitHost(client *goph.Client) (out []byte, ok bool, err error) {
-	dockerExist, err := CheckCommand("docker", client)
-	juicefsExist, err := CheckCommand("juicefs", client)
-	if !juicefsExist || err != nil || !dockerExist {
-		if err := client.Upload("E:\\github.com\\hxx258456\\pyramidel-chain-baas\\scripts\\init.sh", "/root/init.sh"); err != nil {
-			return nil, false, err
-		}
-
-		// 赋予init.sh执行权限,并执行
-		initOut, err := client.Run("chmod +x ~/init.sh && cd ~ && ./init.sh")
-		if err != nil {
-			return nil, false, err
-		}
-		sshLogger.Info(string(initOut))
-	}
-
-	// 挂载网络文件系统
-	out, err = client.Run("juicefs mount --background --cache-size 512000 redis://:Txhy2020@39.100.224.84:7000/1 /root/txhyjuicefs")
-	if err != nil {
+	if err := client.Upload("/root/pyramidel-chain-baas/scripts/init.sh", "/root/init.sh"); err != nil {
 		return nil, false, err
 	}
 
-	return out, true, nil
+	// 赋予init.sh执行权限,并执行
+	_, err = client.Run("chmod +x ~/init.sh")
+	if err != nil {
+		return nil, false, err
+	}
+	initOut, err := client.Run("cd ~ && ./init.sh")
+	if err != nil {
+		return nil, false, err
+	}
+	sshLogger.Debug(string(initOut))
+
+	return initOut, true, nil
 }
 
 func Ping(ip string) int64 {
 
-	pinger, err := ping.NewPinger(ip)
+	pinger, err := probing.NewPinger(ip)
 	if err != nil {
 		sshLogger.Error("Ping ip %s failed", zap.Error(err))
 		return 0
 	}
-	pinger.SetPrivileged(true)
+	//pinger.SetPrivileged(false)
 	pinger.Count = 3
-	pinger.Timeout = time.Second * 1
+	pinger.Timeout = time.Second * 3
 	err = pinger.Run() // Blocks until finished.
 	if err != nil {
 		sshLogger.Error("Ping ip %s failed", zap.Error(err))
 		return 0
 	}
 	stats := pinger.Statistics()
-	return stats.AvgRtt.Milliseconds()
+	return stats.AvgRtt.Nanoseconds()
 }
