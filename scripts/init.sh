@@ -330,9 +330,9 @@ EOF
 function psutil::up() {
   if [ -f /root/txhyjuicefs/psutil/linux/psutil ]; then
     cat >>/etc/rc.local <<EOF
-nohup /root/txhyjuicefs/psutil/linux/psutil -port=8082 >/root/psutil.log 2>&1 &
+nohup /root/txhyjuicefs/psutil/linux/psutil -port=8082 -interval=10 >/root/psutil.log 2>&1 &
 EOF
-    nohup /root/txhyjuicefs/psutil/linux/psutil -port=8082 >/root/psutil.log 2>&1 &
+    nohup /root/txhyjuicefs/psutil/linux/psutil -port=8082 -interval=10 >/root/psutil.log 2>&1 &
   fi
   netstat -nultp | grep 8082
 }

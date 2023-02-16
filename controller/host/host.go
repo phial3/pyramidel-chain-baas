@@ -1,13 +1,16 @@
 package host
 
 import (
+	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/hxx258456/pyramidel-chain-baas/model"
+	"github.com/hxx258456/pyramidel-chain-baas/pkg/psutil/check"
 	"github.com/hxx258456/pyramidel-chain-baas/pkg/response"
 	"github.com/hxx258456/pyramidel-chain-baas/pkg/utils/logger"
 	shost "github.com/hxx258456/pyramidel-chain-baas/services/host"
 	"strconv"
+	"sync/atomic"
 )
 
 var hostLogger = logger.Lg.Named("controller/host")
@@ -53,6 +56,11 @@ func (s *Host) Add(ctx *gin.Context) {
 	return
 }
 
+type res struct {
+	result check.HostInfo
+	id     int
+}
+
 func (s *Host) List(ctx *gin.Context) {
 	host := new(model.Host)
 	result, err := s.service.List(host)
@@ -60,8 +68,51 @@ func (s *Host) List(ctx *gin.Context) {
 		response.Error(ctx, err)
 		return
 	}
-	response.Success(ctx, result, "")
-	return
+	resultCh := make(chan res, len(result))
+	errCh := make(chan error)
+	parentCtx, parentCancel := context.WithCancel(context.Background())
+	defer parentCancel()
+	defer close(resultCh)
+	defer close(errCh)
+	count := (int64)(len(result))
+	for i, _ := range result {
+		go func(parentCtx context.Context, index int) {
+			select {
+			case <-parentCtx.Done():
+				return
+			default:
+				hostinfo, err := s.service.GetResource(&result[index])
+				if err != nil {
+					errCh <- err
+					parentCtx.Done()
+				}
+				resultCh <- res{
+					result: hostinfo,
+					id:     index,
+				}
+				atomic.AddInt64(&count, -1)
+				return
+			}
+		}(parentCtx, i)
+	}
+	for {
+		select {
+		case err, ok := <-errCh:
+			if ok {
+				response.Error(ctx, err)
+				return
+			}
+		case r, ok := <-resultCh:
+			if ok {
+				result[r.id].Info = r.result
+			}
+		default:
+			if count == 0 {
+				response.Success(ctx, result, "")
+				return
+			}
+		}
+	}
 }
 
 //GetResource 获取服务器资源实时信息
@@ -74,7 +125,7 @@ func (s *Host) GetResource(ctx *gin.Context) {
 		return
 	}
 	host := &model.Host{}
-	checkInfo, err := s.service.GetResource(id, host)
+	checkInfo, err := s.service.GetResourceById(id, host)
 	if err != nil {
 		response.Error(ctx, err)
 		return

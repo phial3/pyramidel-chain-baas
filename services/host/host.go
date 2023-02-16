@@ -22,7 +22,8 @@ type HostService interface {
 	Verify(*model.Host) (string, int64, error)
 	Add(*model.Host) error
 	List(*model.Host) ([]model.Host, error)
-	GetResource(int, *model.Host) (check.HostInfo, error)
+	GetResource(*model.Host) (check.HostInfo, error)
+	GetResourceById(int, *model.Host) (check.HostInfo, error)
 }
 
 type hostService struct {
@@ -115,13 +116,32 @@ func (s *hostService) List(param *model.Host) ([]model.Host, error) {
 }
 
 //GetResource 获取服务器资源实时信息
-func (s *hostService) GetResource(id int, param *model.Host) (info check.HostInfo, err error) {
+func (s *hostService) GetResource(param *model.Host) (info check.HostInfo, err error) {
+	s.repo = param
+	address := fmt.Sprintf("%s:%d", param.UseIp, 8082)
+	cli, err := jsonrpcClient.ConnetJsonrpc(address)
+	if err != nil {
+		return info, err
+	}
+	defer func() {
+		if err := cli.Close(); err != nil {
+			hostLogger.Error("关闭grpc客户端时发生错误", zap.Error(err))
+		}
+	}()
+	checkInfo, err := psutilclient.CallPsutil(cli)
+	if err != nil {
+		return info, err
+	}
+	return checkInfo, nil
+}
+
+//GetResourceById 根据id获取服务器资源实时信息
+func (s *hostService) GetResourceById(id int, param *model.Host) (info check.HostInfo, err error) {
 	s.repo = param
 	if err := s.repo.QueryById(id, param); err != nil {
 		return info, err
 	}
-	hostLogger.Debug(" :::::::::::::::", zap.Any("host", param))
-	address := fmt.Sprintf("%s:%d", param.PublicIp, 8082)
+	address := fmt.Sprintf("%s:%d", param.UseIp, 8082)
 	cli, err := jsonrpcClient.ConnetJsonrpc(address)
 	if err != nil {
 		return info, err
