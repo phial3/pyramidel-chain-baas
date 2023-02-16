@@ -6,6 +6,7 @@ import (
 )
 
 type Host struct {
+	*gorm.Model
 	IntranetIp string         `gorm:"column:intranet_ip;uniqueIndex:in_pub_ip;" json:"intranetIp" binding:"required"` // 内网ip地址
 	PublicIp   string         `gorm:"column:public_ip;uniqueIndex:in_pub_ip" json:"publicIp" binding:"required"`      // 公网ip地址
 	Pw         string         `gorm:"column:pw" json:"pw" binding:"required"`                                         // root用户密码
@@ -14,7 +15,6 @@ type Host struct {
 	Status     uint           `gorm:"column:status" json:"status"`                                                    // 是否开放使用
 	UseIp      string         `gorm:"column:use_ip" json:"useIp"`                                                     // 使用的Ip
 	Info       check.HostInfo `json:"info" gorm:"-"`
-	gorm.Model
 }
 
 func (h *Host) Create() error {

@@ -10,6 +10,7 @@ import (
 	"github.com/hxx258456/pyramidel-chain-baas/pkg/utils/logger"
 	shost "github.com/hxx258456/pyramidel-chain-baas/services/host"
 	"strconv"
+	"sync"
 	"sync/atomic"
 )
 
@@ -71,34 +72,41 @@ func (s *Host) List(ctx *gin.Context) {
 	resultCh := make(chan res, len(result))
 	errCh := make(chan error)
 	parentCtx, parentCancel := context.WithCancel(context.Background())
-	defer parentCancel()
+	wg := sync.WaitGroup{}
 	defer close(resultCh)
 	defer close(errCh)
 	count := (int64)(len(result))
+	wg.Add(len(result))
 	for i, _ := range result {
-		go func(parentCtx context.Context, index int) {
-			select {
-			case <-parentCtx.Done():
-				return
-			default:
-				hostinfo, err := s.service.GetResource(&result[index])
-				if err != nil {
-					errCh <- err
-					parentCtx.Done()
+		go func(parentCtx context.Context, index int, wg *sync.WaitGroup) {
+			defer atomic.AddInt64(&count, -1)
+			defer wg.Done()
+			for {
+				select {
+				case <-parentCtx.Done():
+					return
+
+				default:
+					hostinfo, err := s.service.GetResource(&result[index])
+					if err != nil {
+						errCh <- err
+						return
+					}
+					resultCh <- res{
+						result: hostinfo,
+						id:     index,
+					}
+					return
 				}
-				resultCh <- res{
-					result: hostinfo,
-					id:     index,
-				}
-				atomic.AddInt64(&count, -1)
-				return
 			}
-		}(parentCtx, i)
+		}(parentCtx, i, &wg)
 	}
 	for {
 		select {
 		case err, ok := <-errCh:
 			if ok {
+				parentCancel()
+				wg.Wait()
 				response.Error(ctx, err)
 				return
 			}
@@ -107,7 +115,9 @@ func (s *Host) List(ctx *gin.Context) {
 				result[r.id].Info = r.result
 			}
 		default:
-			if count == 0 {
+			if count <= 0 {
+				parentCancel()
+				wg.Wait()
 				response.Success(ctx, result, "")
 				return
 			}
