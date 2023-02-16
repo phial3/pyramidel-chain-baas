@@ -2,7 +2,6 @@ package check
 
 import (
 	"fmt"
-	"github.com/hxx258456/pyramidel-chain-baas/pkg/psutil/localcache"
 	"github.com/jinzhu/copier"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
@@ -212,6 +211,6 @@ func CheckHost() (HostInfo, error) {
 	if err = checkIOCounters(&host); err != nil {
 		return host, err
 	}
-	localcache.Cache.Set("info", host, 5*time.Minute)
+
 	return host, nil
 }

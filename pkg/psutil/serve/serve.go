@@ -37,8 +37,7 @@ func (h *Host) Get(req interface{}, info *check.HostInfo) error {
 }
 
 func Serve() {
-
-	var port = flag.Int("port", 8082, "jsonrpc use port default 8081")
+	var port = flag.Int("port", 8082, "jsonrpc use port default 8082")
 	var interval = flag.Int("interval", 10, "cache cleanup interval seconds")
 	flag.Parse()
 	inter := (time.Duration)(*interval)
@@ -46,7 +45,8 @@ func Serve() {
 	var address = fmt.Sprintf("0.0.0.0:%d", *port)
 	go func() {
 		for {
-			if _, err := check.CheckHost(); err != nil {
+			if host, err := check.CheckHost(); err != nil {
+				localcache.Cache.Set("info", host, (inter+5)*time.Second)
 				log.Println(err)
 			}
 			time.Sleep(time.Second * inter)
