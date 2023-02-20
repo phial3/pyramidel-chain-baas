@@ -17,9 +17,7 @@ func Error(ctx *gin.Context, err error) {
 		Msg:  err.Error(),
 		Data: nil,
 	})
-	if err := ctx.Error(err); err != nil {
-
-	}
+	_ = ctx.Error(err)
 	return
 }
 func Success(ctx *gin.Context, data interface{}, msg string) {

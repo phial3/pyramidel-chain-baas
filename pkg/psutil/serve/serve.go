@@ -7,6 +7,7 @@ import (
 	"github.com/hxx258456/pyramidel-chain-baas/pkg/jsonrpcServer"
 	"github.com/hxx258456/pyramidel-chain-baas/pkg/psutil/check"
 	"github.com/hxx258456/pyramidel-chain-baas/pkg/psutil/localcache"
+	"github.com/hxx258456/pyramidel-chain-baas/pkg/utils/freeport"
 	"log"
 	"time"
 )
@@ -34,6 +35,23 @@ func (h *Host) Get(req interface{}, info *check.HostInfo) error {
 		return err
 	}
 
+}
+
+type Response struct {
+	Port int `json:"port"`
+}
+
+func (h *Host) GetPort(req interface{}, res *Response) error {
+	result := Response{}
+	port, err := freeport.GetFreePort()
+	if err != nil {
+		*res = result
+		return err
+	}
+	log.Println(port)
+	*res = result
+	res.Port = port
+	return nil
 }
 
 func Serve() {

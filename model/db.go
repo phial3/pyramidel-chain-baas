@@ -22,9 +22,10 @@ func connect() *gorm.DB {
 	if err != nil {
 		mysqlServeLogger.Panic("Couldn't connect to database", zap.Error(err))
 	}
-	if !db.Migrator().HasTable(&Host{}) {
-		db.AutoMigrate(&Host{})
-	}
+	db.AutoMigrate(&Host{})
+	db.AutoMigrate(&Organization{})
+	db.AutoMigrate(&Peer{})
+	db.AutoMigrate(&Orderer{})
 	return db
 }
 

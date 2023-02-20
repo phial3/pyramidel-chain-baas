@@ -138,7 +138,7 @@ func (s *hostService) GetResource(param *model.Host) (info check.HostInfo, err e
 //GetResourceById 根据id获取服务器资源实时信息
 func (s *hostService) GetResourceById(id int, param *model.Host) (info check.HostInfo, err error) {
 	s.repo = param
-	if err := s.repo.QueryById(id, param); err != nil {
+	if err := s.repo.QueryById(uint(id), param); err != nil {
 		return info, err
 	}
 	address := fmt.Sprintf("%s:%d", param.UseIp, 8082)
@@ -157,8 +157,6 @@ func (s *hostService) GetResourceById(id int, param *model.Host) (info check.Hos
 	}
 	return checkInfo, nil
 }
-
-var _ HostService = &hostService{}
 
 func NewHostService() HostService {
 	return &hostService{
