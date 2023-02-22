@@ -20,3 +20,7 @@
 | jsonrpc server | 8082 |
 | docker daemon | 2375 |
 
+## nohup启用服务
+
+export PYCBAAS_CFG_PATH=/root/pyramidel-chain-baas/configs
+nohup /root/pyramidel-chain-baas/cmd/service/serve >/root/serve.log 2>&1 &

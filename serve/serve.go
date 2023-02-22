@@ -24,8 +24,8 @@ func Serve() {
 	r := gin.New()
 	gin.SetMode(localconfig.Defaultconfig.Serve.Mode)
 
-	r.Use(whiteListIp(&localconfig.Defaultconfig.Serve), logger.GinLogger(ginLogger, &localconfig.Defaultconfig.Logger), logger.RecoveryWithZap(ginLogger, true))
-
+	//r.Use(whiteListIp(&localconfig.Defaultconfig.Serve), logger.GinLogger(ginLogger, &localconfig.Defaultconfig.Logger), logger.RecoveryWithZap(ginLogger, true))
+	r.Use(logger.GinLogger(ginLogger, &localconfig.Defaultconfig.Logger), logger.RecoveryWithZap(ginLogger, true))
 	routers.Include(host.Routers, orgnizations.Routers, peer.Routers)
 	routers.Init(r)
 	zap.L().Info(" ", zap.String("version", version.Version))

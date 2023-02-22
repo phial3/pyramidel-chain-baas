@@ -2,7 +2,6 @@ package check
 
 import (
 	"fmt"
-	"github.com/jinzhu/copier"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/docker"
@@ -21,20 +20,20 @@ const (
 )
 
 type HostInfo struct {
-	UsageStat   UsageStat   `json:"usageStat"`   // 硬盘使用情况
-	InfoStat    InfoStat    `json:"infoStat"`    // 主机信息
-	CpuInfoStat CpuInfoStat `json:"cpuInfoStat"` // cpu信息
-	MemStat     MemStat     `json:"memStat"`     // 内存使用情况
-	PacketsSent uint64      `json:"packetSent"`  // 上行实时流量
-	PacketsRecv uint64      `json:"packetRecv"`  // 下行实时流量
+	UsageStat
+	InfoStat
+	CpuInfoStat
+	MemStat
+	PacketsSent uint64 `json:"packetSent"` // 上行实时流量
+	PacketsRecv uint64 `json:"packetRecv"` // 下行实时流量
 }
 
 //UsageStat 硬盘使用信息
 type UsageStat struct {
-	Total       uint64 `json:"total"`       // 硬盘总量
-	Free        uint64 `json:"free"`        // 未使用的
-	Used        uint64 `json:"used"`        // 使用的
-	UsedPercent int    `json:"usedPercent"` // 已使用百分比
+	DiskTotal       uint64 `json:"diskTotal"`       // 硬盘总量
+	DiskFree        uint64 `json:"diskFree"`        // 未使用的
+	DiskUsed        uint64 `json:"diskUsed"`        // 使用的
+	DiskUsedPercent int    `json:"diskUsedPercent"` // 已使用百分比
 }
 
 //InfoStat 服务操作系统信息
@@ -68,22 +67,22 @@ type CpuInfoStat struct {
 
 type MemStat struct {
 	// Total amount of RAM on this system
-	Total uint64 `json:"total"`
+	MemTotal uint64 `json:"memTotal"`
 
 	// RAM available for programs to allocate
 	//
 	// This value is computed from the kernel specific values.
-	Available uint64 `json:"available"`
+	MemAvailable uint64 `json:"memAvailable"`
 
 	// RAM used by programs
 	//
 	// This value is computed from the kernel specific values.
-	Used uint64 `json:"used"`
+	MemUsed uint64 `json:"memUsed"`
 
 	// Percentage of RAM used by programs
 	//
 	// This value is computed from the kernel specific values.
-	UsedPercent float64 `json:"usedPercent"`
+	MemUsedPercent float64 `json:"memUsedPercent"`
 }
 
 //DiskCheck 服务器硬盘使用量
@@ -94,9 +93,10 @@ func DiskCheck() (UsageStat, error) {
 		return usage, err
 	}
 
-	if err := copier.Copy(&usage, u); err != nil {
-		return usage, err
-	}
+	usage.DiskFree = u.Free
+	usage.DiskTotal = u.Total
+	usage.DiskUsed = u.Used
+	usage.DiskUsedPercent = int(u.UsedPercent)
 	return usage, nil
 }
 
@@ -162,12 +162,10 @@ func RAMCheck() (MemStat, error) {
 		return memStat, err
 	}
 
-	if err := copier.Copy(&memStat, u); err != nil {
-		return memStat, err
-	}
-	memStat.Used /= MB
-	memStat.Total /= MB
-	memStat.Available /= MB
+	memStat.MemUsed = u.Used / MB
+	memStat.MemUsedPercent = u.UsedPercent
+	memStat.MemAvailable = u.Available / MB
+	memStat.MemTotal = u.Total / MB
 	return memStat, nil
 }
 
