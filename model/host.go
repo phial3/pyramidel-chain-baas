@@ -17,7 +17,7 @@ type Host struct {
 	UseIp      string `gorm:"column:use_ip" json:"useIp"`                                                     // 使用的Ip
 	InstanceId string `gorm:"column:instanceId;unique" json:"instanceId" binding:"required"`                  // 实例id
 
-	Info check.HostInfo `json:"info" gorm:"-"`
+	check.HostInfo
 }
 
 func (h *Host) Create() error {

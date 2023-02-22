@@ -24,65 +24,65 @@ type HostInfo struct {
 	InfoStat
 	CpuInfoStat
 	MemStat
-	PacketsSent uint64 `json:"packetSent"` // 上行实时流量
-	PacketsRecv uint64 `json:"packetRecv"` // 下行实时流量
+	PacketsSent uint64 `json:"packetSent" gorm:"-"` // 上行实时流量
+	PacketsRecv uint64 `json:"packetRecv" gorm:"-"` // 下行实时流量
 }
 
 //UsageStat 硬盘使用信息
 type UsageStat struct {
-	DiskTotal       uint64 `json:"diskTotal"`       // 硬盘总量
-	DiskFree        uint64 `json:"diskFree"`        // 未使用的
-	DiskUsed        uint64 `json:"diskUsed"`        // 使用的
-	DiskUsedPercent int    `json:"diskUsedPercent"` // 已使用百分比
+	DiskTotal       uint64 `json:"diskTotal" gorm:"-"`       // 硬盘总量
+	DiskFree        uint64 `json:"diskFree" gorm:"-"`        // 未使用的
+	DiskUsed        uint64 `json:"diskUsed" gorm:"-"`        // 使用的
+	DiskUsedPercent int    `json:"diskUsedPercent" gorm:"-"` // 已使用百分比
 }
 
 //InfoStat 服务操作系统信息
 type InfoStat struct {
-	Hostname      string `json:"hostname"`      // 主机名称
-	Uptime        uint64 `json:"uptime"`        // 运行时间
-	BootTime      string `json:"bootTime"`      // 开机时间
-	Procs         uint64 `json:"procs"`         // 进程数量
-	OS            string `json:"os"`            // 操作系统类型
-	KernelVersion string `json:"kernelVersion"` // 操作系统内核版本
-	KernelArch    string `json:"kernelArch"`    // 操作系统架构
-	DockerNum     int    `json:"dockerNum"`     // 运行容器数量
+	Hostname      string `json:"hostname" gorm:"-"`      // 主机名称
+	Uptime        uint64 `json:"uptime" gorm:"-"`        // 运行时间
+	BootTime      string `json:"bootTime" gorm:"-"`      // 开机时间
+	Procs         uint64 `json:"procs" gorm:"-"`         // 进程数量
+	OS            string `json:"os" gorm:"-"`            // 操作系统类型
+	KernelVersion string `json:"kernelVersion" gorm:"-"` // 操作系统内核版本
+	KernelArch    string `json:"kernelArch" gorm:"-"`    // 操作系统架构
+	DockerNum     int    `json:"dockerNum" gorm:"-"`     // 运行容器数量
 }
 
 // CoreInfoStat cpu核心信息
 type CoreInfoStat struct {
-	CPU       int32   `json:"cpu"`       // 编号
-	Family    string  `json:"family"`    // 代数
-	Mhz       float64 `json:"mhz"`       // 主频
-	CacheSize int32   `json:"cacheSize"` // 缓存大小
-	Percent   float64 `json:"percent"`   // 使用率
+	CPU       int32   `json:"cpu" gorm:"-"`       // 编号
+	Family    string  `json:"family" gorm:"-"`    // 代数
+	Mhz       float64 `json:"mhz" gorm:"-"`       // 主频
+	CacheSize int32   `json:"cacheSize" gorm:"-"` // 缓存大小
+	Percent   float64 `json:"percent" gorm:"-"`   // 使用率
 }
 
 // CpuInfoStat cpu信息
 type CpuInfoStat struct {
-	Cores  []CoreInfoStat `json:"cores"` // 核心信息
-	Load1  float64        `json:"load1"`
-	Load5  float64        `json:"load5"`
-	Load15 float64        `json:"load15"`
+	Cores  []CoreInfoStat `json:"cores" gorm:"-"` // 核心信息
+	Load1  float64        `json:"load1" gorm:"-"`
+	Load5  float64        `json:"load5" gorm:"-"`
+	Load15 float64        `json:"load15" gorm:"-"`
 }
 
 type MemStat struct {
 	// Total amount of RAM on this system
-	MemTotal uint64 `json:"memTotal"`
+	MemTotal uint64 `json:"memTotal" gorm:"-"`
 
 	// RAM available for programs to allocate
 	//
 	// This value is computed from the kernel specific values.
-	MemAvailable uint64 `json:"memAvailable"`
+	MemAvailable uint64 `json:"memAvailable" gorm:"-"`
 
 	// RAM used by programs
 	//
 	// This value is computed from the kernel specific values.
-	MemUsed uint64 `json:"memUsed"`
+	MemUsed uint64 `json:"memUsed" gorm:"-"`
 
 	// Percentage of RAM used by programs
 	//
 	// This value is computed from the kernel specific values.
-	MemUsedPercent float64 `json:"memUsedPercent"`
+	MemUsedPercent float64 `json:"memUsedPercent" gorm:"-"`
 }
 
 //DiskCheck 服务器硬盘使用量

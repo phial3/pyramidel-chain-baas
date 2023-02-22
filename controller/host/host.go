@@ -9,6 +9,7 @@ import (
 	"github.com/hxx258456/pyramidel-chain-baas/pkg/response"
 	"github.com/hxx258456/pyramidel-chain-baas/pkg/utils/logger"
 	shost "github.com/hxx258456/pyramidel-chain-baas/services/host"
+	"github.com/jinzhu/copier"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -112,7 +113,12 @@ func (s *Host) List(ctx *gin.Context) {
 			}
 		case r, ok := <-resultCh:
 			if ok {
-				result[r.id].Info = r.result
+				if err := copier.Copy(&result[r.id], &r.result); err != nil {
+					parentCancel()
+					wg.Wait()
+					response.Error(ctx, err)
+					return
+				}
 			}
 		default:
 			if count <= 0 {
