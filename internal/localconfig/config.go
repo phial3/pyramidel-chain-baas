@@ -43,6 +43,15 @@ var Defaultconfig = TopLevel{
 		Loc:       true,
 		Charset:   "utf8_unicode_ci",
 	},
+	AMQP: AMQP{
+		Host:        "47.92.54.239",
+		Port:        5672,
+		User:        "txhy",
+		Password:    "txhy2022.com",
+		Vhost:       "//auth",
+		Queue:       "baasOrgAdd",
+		ContentType: "application/json",
+	},
 }
 var config *viper.Viper
 
@@ -51,6 +60,7 @@ type (
 		Logger Logger `json:"logger" yaml:"logger"`
 		Serve  Serve  `json:"serve" yaml:"serve"`
 		Mysql  Mysql  `json:"mysql" yaml:"mysql"`
+		AMQP   AMQP   `json:"amqp" yaml:"amqp"`
 	}
 )
 

@@ -51,8 +51,8 @@ func (h *Host) QueryAll(result interface{}) error {
 }
 
 func (h *Host) QueryById(id uint, result interface{}) error {
-	if err := db.Where("id = ?", id).Find(&result).Error; err != nil {
-		return db.Error
+	if err := db.Where("id = ?", id).Find(result).Error; err != nil {
+		return err
 	}
 	return nil
 }

@@ -57,6 +57,7 @@ func (s *organizationsService) Add(param organizations2.Organizations) error {
 		CaUser:         "admin",
 		CaPassword:     param.OrgUscc,
 		Domain:         param.OrgUscc + ".pcb.com",
+		Status:         0,
 	}
 	s.repo = &org
 	if err := s.repo.Create(param, s.lb); err != nil {

@@ -22,6 +22,7 @@ type Organization struct {
 	CaServerName   string `json:"caServerName" gorm:"column:caServerName;unique"`     // ca服务名 FABRIC_CA_SERVER_CA_NAME
 	Peers          []Peer
 	Orderers       []Orderer
+	Status         int `json:"status" gorm:"column:status"` // 状态
 	Base
 }
 
@@ -99,6 +100,8 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 				HostId:         hostid,
 				OrganizationId: o.ID,
 				Port:           uint(port),
+				OrgPackageId:   param.OrgPackageId,
+				Status:         0,
 			}
 			if err := peer.Create(tx); err != nil {
 				tx.Rollback()
@@ -152,6 +155,8 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 				HostId:         hostid,
 				OrganizationId: o.ID,
 				Port:           uint(port),
+				OrgPackageId:   param.OrgPackageId,
+				Status:         0,
 			}
 			if err := orderer.Create(tx); err != nil {
 				tx.Rollback()
@@ -166,12 +171,12 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 func GroupList(list []organizations.NodeList) (peerList []organizations.NodeList, ordererList []organizations.NodeList, err error) {
 	for _, v := range list {
 		switch v.NodeType {
-		case "peer":
+		case 2:
 			peerList = append(peerList, v)
-		case "orderer":
+		case 1:
 			ordererList = append(ordererList, v)
 		default:
-			return peerList, ordererList, errors.New("invalid node type" + v.NodeType)
+			return peerList, ordererList, errors.New("invalid node type")
 		}
 	}
 	return peerList, ordererList, nil

@@ -20,6 +20,9 @@ type Peer struct {
 	SerialNumber   uint                `json:"serialNumber" gorm:"column:serialNumber"`     // 序列号
 	OrganizationId uint                `json:"organizationId" gorm:"column:organizationId"` // 所属组织
 	Organization   Organization        `json:"organization" gorm:"foreignKey:OrganizationId" `
+	OrgPackageId   uint64              `json:"orgPackageId" gorm:"column:orgPackageId"` // 订单id
+	Status         int                 `json:"status" gorm:"column:status"`             // 状态
+
 	Base
 }
 
@@ -46,7 +49,7 @@ func (p *Peer) GetMaxSerial(tx *gorm.DB, id uint) error {
 			SkipDefaultTransaction: true,
 		})
 	}
-	if err := tx.Where("organizationId = ?", id).First(&p).Error; err != nil {
+	if err := tx.Where("organizationId = ?", id).Order("serialNumber DESC").First(&p).Error; err != nil {
 		if err.Error() == gorm.ErrRecordNotFound.Error() {
 			p.ID = 0
 			return nil

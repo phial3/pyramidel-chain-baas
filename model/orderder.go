@@ -20,6 +20,8 @@ type Orderer struct {
 	Name           string              `json:"name" gorm:"column:name"`                     // 节点名ex: orderer1
 	OrganizationId uint                `json:"organizationId" gorm:"column:organizationId"` // 所属组织
 	Organization   Organization        `json:"organization" gorm:"foreignKey:OrganizationId" `
+	OrgPackageId   uint64              `json:"orgPackageId" gorm:"column:orgPackageId"` // 订单id
+	Status         int                 `json:"status" gorm:"column:status"`             // 状态
 
 	Base
 }
@@ -47,7 +49,7 @@ func (o *Orderer) GetMaxSerial(tx *gorm.DB, id uint) error {
 			SkipDefaultTransaction: true,
 		})
 	}
-	if err := tx.Where("organizationId = ?", id).First(&o).Error; err != nil {
+	if err := tx.Where("organizationId = ?", id).Order("serialNumber DESC").First(&o).Error; err != nil {
 		if err.Error() == gorm.ErrRecordNotFound.Error() {
 			o.ID = 0
 			return nil

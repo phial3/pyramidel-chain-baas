@@ -100,5 +100,5 @@ func Ping(ip string) int64 {
 		return 0
 	}
 	stats := pinger.Statistics()
-	return stats.AvgRtt.Nanoseconds()
+	return stats.AvgRtt.Microseconds()
 }

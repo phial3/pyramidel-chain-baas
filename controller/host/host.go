@@ -141,11 +141,12 @@ func (s *Host) GetResource(ctx *gin.Context) {
 		return
 	}
 	host := &model.Host{}
-	checkInfo, err := s.service.GetResourceById(id, host)
+	host.ID = uint(id)
+	result, err := s.service.GetResourceById(id)
 	if err != nil {
 		response.Error(ctx, err)
 		return
 	}
-	response.Success(ctx, checkInfo, "")
+	response.Success(ctx, result, "")
 	return
 }

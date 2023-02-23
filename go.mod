@@ -14,6 +14,7 @@ require (
 	github.com/shirou/gopsutil/v3 v3.23.1
 	github.com/spf13/cast v1.5.0
 	github.com/spf13/viper v1.14.0
+	github.com/streadway/amqp v1.0.0
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.5.0
 	gorm.io/driver/mysql v1.4.6

@@ -10,6 +10,7 @@ import (
 	"github.com/hxx258456/pyramidel-chain-baas/pkg/remotessh"
 	"github.com/hxx258456/pyramidel-chain-baas/pkg/utils/logger"
 	"github.com/hxx258456/pyramidel-chain-baas/repository/host"
+	"github.com/jinzhu/copier"
 	"github.com/melbahja/goph"
 	"go.uber.org/zap"
 )
@@ -23,7 +24,7 @@ type HostService interface {
 	Add(*model.Host) error
 	List(*model.Host) ([]model.Host, error)
 	GetResource(*model.Host) (check.HostInfo, error)
-	GetResourceById(int, *model.Host) (check.HostInfo, error)
+	GetResourceById(int) (*model.Host, error)
 }
 
 type hostService struct {
@@ -35,8 +36,10 @@ func (s *hostService) i() {}
 func (s *hostService) Verify(param *model.Host) (ip string, covRtt int64, err error) {
 
 	iipRtt := remotessh.Ping(param.IntranetIp)
+	hostLogger.Debug("", zap.Int64("iipRtt", iipRtt))
 	if iipRtt <= 0 {
 		pipRtt := remotessh.Ping(param.PublicIp)
+		hostLogger.Debug("", zap.Int64("pipRtt", pipRtt))
 		if pipRtt <= 0 {
 			return ip, covRtt, errors.New("invalid publicIp and internalIp")
 		} else {
@@ -57,16 +60,14 @@ func (s *hostService) Verify(param *model.Host) (ip string, covRtt int64, err er
 			hostLogger.Error(err.Error())
 		}
 	}(client)
-	return ip, covRtt, errors.New("invalid publicIp and internalIp")
+	return ip, covRtt, nil
 }
 
 // Add 异步添加新主机
 func (s *hostService) Add(param *model.Host) error {
 	iipRtt := remotessh.Ping(param.IntranetIp)
-	hostLogger.Debug("", zap.Int64("iipRtt", iipRtt))
 	if iipRtt <= 0 {
 		pipRtt := remotessh.Ping(param.PublicIp)
-		hostLogger.Debug("", zap.Int64("pipRtt", pipRtt))
 		if pipRtt <= 0 {
 			return errors.New("invalid publicIp and internalIp")
 		} else {
@@ -136,12 +137,17 @@ func (s *hostService) GetResource(param *model.Host) (info check.HostInfo, err e
 }
 
 //GetResourceById 根据id获取服务器资源实时信息
-func (s *hostService) GetResourceById(id int, param *model.Host) (info check.HostInfo, err error) {
+func (s *hostService) GetResourceById(id int) (info *model.Host, err error) {
+	param := &model.Host{}
+	result := []*model.Host{}
 	s.repo = param
-	if err := s.repo.QueryById(uint(id), param); err != nil {
+	if err := s.repo.QueryById(uint(id), &result); err != nil {
 		return info, err
 	}
-	address := fmt.Sprintf("%s:%d", param.UseIp, 8082)
+	if len(result) <= 0 {
+		return info, errors.New("data not found")
+	}
+	address := fmt.Sprintf("%s:%d", result[0].UseIp, 8082)
 	cli, err := jsonrpcClient.ConnetJsonrpc(address)
 	if err != nil {
 		return info, err
@@ -151,11 +157,15 @@ func (s *hostService) GetResourceById(id int, param *model.Host) (info check.Hos
 			hostLogger.Error("关闭grpc客户端时发生错误", zap.Error(err))
 		}
 	}()
+
 	checkInfo, err := psutilclient.CallPsutil(cli)
+	if err := copier.Copy(&result[0], &checkInfo); err != nil {
+		return info, err
+	}
 	if err != nil {
 		return info, err
 	}
-	return checkInfo, nil
+	return result[0], nil
 }
 
 func NewHostService() HostService {
