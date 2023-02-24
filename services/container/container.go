@@ -21,8 +21,9 @@ type ContainerService interface {
 }
 
 type containerService struct {
-	Host string
-	cli  *client.Client
+	Host     string
+	PublicIP string
+	cli      *client.Client
 }
 
 func (s *containerService) Pull(ctx context.Context, s2 string) error {
@@ -40,16 +41,20 @@ func (s *containerService) Close() error {
 	return s.cli.Close()
 }
 
-func NewContainerService(host string) ContainerService {
+func NewContainerService(host, ip string) ContainerService {
 	return &containerService{
-		Host: host,
+		Host:     host,
+		PublicIP: ip,
 	}
 }
 
 func (s *containerService) Conn() error {
-	address := fmt.Sprintf("tcp://%s:%d", s.Host, 2375)
+	address := fmt.Sprintf("tcp://%s:%d", s.Host, 2376)
+	cacertPath := fmt.Sprintf("/root/txhyjuicefs/%s/certs/ca.pem", s.PublicIP)
+	certPath := fmt.Sprintf("/root/txhyjuicefs/%s/certs/client.pem", s.PublicIP)
+	keyPath := fmt.Sprintf("/root/txhyjuicefs/%s/certs/client-key.pem", s.PublicIP)
 	cli, err := client.NewClientWithOpts(client.WithAPIVersionNegotiation(),
-		client.WithHost(address))
+		client.WithHost(address), client.WithTLSClientConfig(cacertPath, certPath, keyPath))
 	if err != nil {
 		return err
 	}
@@ -58,7 +63,13 @@ func (s *containerService) Conn() error {
 }
 
 func (s *containerService) Run(ctx context.Context, config *container.Config, hostConfig *container.HostConfig, networkingConfig *network.NetworkingConfig, containerName string) error {
-	s.cli.ContainerCreate(ctx, config, hostConfig, networkingConfig, nil, "")
+	createRes, err := s.cli.ContainerCreate(ctx, config, hostConfig, networkingConfig, nil, "")
+	if err != nil {
+		return err
+	}
+	if err := s.cli.ContainerStart(ctx, createRes.ID, types.ContainerStartOptions{}); err != nil {
+		return err
+	}
 	return nil
 }
 

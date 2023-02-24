@@ -170,7 +170,7 @@ EOF
 }
 EOF
 
-  sed -i "13c ExecStart=/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock -H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock" /usr/lib/systemd/system/docker.service
+  sed -i "13c ExecStart=/usr/bin/dockerd --tlsverify --tlscacert=/etc/docker/ca.pem --tlscert=/etc/docker/server.pem --tlskey=/etc/docker/server-key.pem -H fd:// --containerd=/run/containerd/containerd.sock -H tcp://0.0.0.0:2376 -H unix:///var/run/docker.sock" /usr/lib/systemd/system/docker.service
   systemctl daemon-reload
   systemctl enable docker
   systemctl restart docker.service

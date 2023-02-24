@@ -24,3 +24,6 @@
 
 export PYCBAAS_CFG_PATH=/root/pyramidel-chain-baas/configs
 nohup /root/pyramidel-chain-baas/cmd/service/serve >/root/serve.log 2>&1 &
+
+## Docker tls cli
+docker --tlsverify --tlscacert=ca.pem --tlscert=client.pem --tlskey=client-key.pem -H tcp://8.142.106.130:2376 version

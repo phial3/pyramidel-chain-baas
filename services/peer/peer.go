@@ -24,7 +24,7 @@ func NewPeerService() PeerService {
 
 func (s *peerService) List(peer model.Peer) ([]types.Container, error) {
 	ctx := context.Background()
-	containerCli := container.NewContainerService(peer.Host.UseIp)
+	containerCli := container.NewContainerService(peer.Host.UseIp, peer.Host.PublicIp)
 	if err := containerCli.Conn(); err != nil {
 		return nil, err
 	}
