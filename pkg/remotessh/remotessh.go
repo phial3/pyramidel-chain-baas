@@ -102,3 +102,14 @@ func Ping(ip string) int64 {
 	stats := pinger.Statistics()
 	return stats.AvgRtt.Microseconds()
 }
+
+func EnrollBootstrap(client *goph.Client, url, caname string) error {
+	cmd, err := client.Command("fabric-ca-client", "enroll", "-d", "-u", url, "--caname", caname, "--tls.certfiles")
+	if err != nil {
+		return err
+	}
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	return nil
+}

@@ -1,13 +1,16 @@
 package model
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/hxx258456/pyramidel-chain-baas/pkg/jsonrpcClient"
 	psutilclient "github.com/hxx258456/pyramidel-chain-baas/pkg/psutil/client"
 	"github.com/hxx258456/pyramidel-chain-baas/pkg/request/organizations"
+	"github.com/hxx258456/pyramidel-chain-baas/services/container"
 	"github.com/hxx258456/pyramidel-chain-baas/services/loadbalance"
 	"gorm.io/gorm"
+	"strconv"
 )
 
 type Organization struct {
@@ -30,15 +33,48 @@ func (Organization) TableName() string {
 	return "baas_organization"
 }
 
+func (o *Organization) Exists(uscc string) (bool, error) {
+	var result = make([]Organization, 1)
+	if err := db.Where("uscc = ?", uscc).Find(&result).Error; err != nil {
+		return false, err
+	}
+
+	if len(result) > 0 {
+		*o = result[0]
+		return true, nil
+	} else {
+		return false, nil
+	}
+}
 func (o *Organization) Create(param organizations.Organizations, balancer loadbalance.LBS) error {
 	tx := db.Session(&gorm.Session{
 		SkipDefaultTransaction: true,
 	})
-	if err := tx.Create(o).Error; err != nil {
-		tx.Rollback()
+	exists, err := o.Exists(param.OrgUscc)
+	if err != nil {
 		return err
 	}
-
+	if !exists {
+		if err := tx.Create(o).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+		if err := o.Host.QueryById(o.CaHostId, &o.Host); err != nil {
+			tx.Rollback()
+			return err
+		}
+		caService := container.NewCaContainerService(o.Host.UseIp, o.Host.PublicIp, strconv.Itoa(int(o.CaServerPort)), o.CaUser, o.CaPassword, o.Uscc, o.CaServerName, o.CaServerDomain)
+		if err := caService.Conn(); err != nil {
+			tx.Rollback()
+			return err
+		}
+		ctx := context.Background()
+		config, D := caService.GenConfig(ctx)
+		if err := caService.Run(ctx, config, D, o.CaServerName); err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
 	cureentPeer := &Peer{}
 	if err := cureentPeer.GetMaxSerial(tx, o.ID); err != nil {
 		tx.Rollback()
@@ -85,8 +121,8 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 			if err != nil {
 				return err
 			}
-			domain := fmt.Sprintf("peer%d.%s.pcb.com", cureentPeer.SerialNumber+uint(i)+uint(j), o.Uscc)
-			name := fmt.Sprintf("%s_peer%d", o.Uscc, cureentPeer.SerialNumber+uint(i)+uint(j))
+			domain := fmt.Sprintf("peer%d.%s.pcb.com", cureentPeer.SerialNumber+uint(i)+uint(j)+1, o.Uscc)
+			name := fmt.Sprintf("%s_peer%d", o.Uscc, cureentPeer.SerialNumber+uint(i)+uint(j)+1)
 			peer := Peer{
 				Domain:         domain,
 				DueTime:        param.DueTime,
@@ -96,7 +132,7 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 				NodeDisk:       v.NodeDisk,
 				NodeMemory:     v.NodeMemory,
 				Name:           name,
-				SerialNumber:   cureentPeer.SerialNumber + uint(i) + uint(j),
+				SerialNumber:   cureentPeer.SerialNumber + uint(i) + uint(j) + 1,
 				HostId:         hostid,
 				OrganizationId: o.ID,
 				Port:           uint(port),
@@ -140,8 +176,8 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 			if err != nil {
 				return err
 			}
-			domain := fmt.Sprintf("orderer%d.%s.pcb.com", cureentOrderer.SerialNumber+uint(i)+uint(j), o.Uscc)
-			name := fmt.Sprintf("%s_orderer%d", o.Uscc, cureentOrderer.SerialNumber+uint(i)+uint(j))
+			domain := fmt.Sprintf("orderer%d.%s.pcb.com", cureentOrderer.SerialNumber+uint(i)+uint(j)+1, o.Uscc)
+			name := fmt.Sprintf("%s_orderer%d", o.Uscc, cureentOrderer.SerialNumber+uint(i)+uint(j)+1)
 			orderer := Orderer{
 				Domain:         domain,
 				DueTime:        param.DueTime,
@@ -151,7 +187,7 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 				NodeDisk:       v.NodeDisk,
 				NodeMemory:     v.NodeMemory,
 				Name:           name,
-				SerialNumber:   cureentOrderer.SerialNumber + uint(i) + uint(j),
+				SerialNumber:   cureentOrderer.SerialNumber + uint(i) + uint(j) + 1,
 				HostId:         hostid,
 				OrganizationId: o.ID,
 				Port:           uint(port),

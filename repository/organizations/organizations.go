@@ -10,4 +10,5 @@ var _ OrganizationRepo = (*model.Organization)(nil)
 
 type OrganizationRepo interface {
 	Create(organizations.Organizations, loadbalance.LBS) error
+	Exists(string) (bool, error)
 }
