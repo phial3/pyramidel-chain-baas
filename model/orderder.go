@@ -22,6 +22,7 @@ type Orderer struct {
 	Organization   Organization        `json:"organization" gorm:"foreignKey:OrganizationId" `
 	OrgPackageId   uint64              `json:"orgPackageId" gorm:"column:orgPackageId"` // 订单id
 	Status         int                 `json:"status" gorm:"column:status"`             // 状态
+	Error          string              `json:"error" gorm:"column:_"`                   // 节点当前错误
 
 	Base
 }

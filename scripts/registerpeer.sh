@@ -1,27 +1,46 @@
-#!/usr/bin/env bash
+#!/bin/bash
 #参数1组织uscc, 参数2 peer名,名字和密码使用同一参数, 参数3 peer域名, 参数4 ca端口
-export FABRIC_CA_CLIENT_HOME=/root/txhyjuicefs/organizations/fabric-ca/$1/
+# 设置fabric-ca-client home环境变量
+source /etc/profile
 
-infoln "Register peer"
-set -x
-fabric-ca-client register -d --caname ca-$1 --id.name $2 --id.secret $2 --id.type peer --tls.certfiles /root/txhyjuicefs/organizations/fabric-ca/$1/ca-cert.pem
-{ set +x; } 2>/dev/null
+ORG_NAME=$1
+PEER_NAME=$2
+PEER_DOMAIN=$3
+PORT=$4
+CA_CLIENT_HOME=/root/txhyjuicefs/organizations/fabric-ca/$ORG_NAME
+PEERS_DIR=/root/txhyjuicefs/organizations/$ORG_NAME/peers
+PEER_DIR=$PEERS_DIR/$PEER_DOMAIN
+ORG_DIR=/root/txhyjuicefs/organizations/$ORG_NAME
 
-mkdir -p /root/txhyjuicefs/organizations/$1/peers
-mkdir -p /root/txhyjuicefs/organizations/$1/peers/$3
+# Set environment variables
+export FABRIC_CA_CLIENT_HOME=$CA_CLIENT_HOME
 
-infoln "Generate the peer msp"
-set -x
-fabric-ca-client enroll -d -u https://$2:$2@localhost:$4 --caname ca-$1 -M /root/txhyjuicefs/organizations/$1/peers/$3/msp --csr.hosts $3 --tls.certfiles /root/txhyjuicefs/organizations/fabric-ca/$1/ca-cert.pem
-{ set +x; } 2>/dev/null
+# 创建目录函数
+create_dir() {
+  mkdir -p $1
+}
 
-cp /root/txhyjuicefs/organizations/$1/msp/config.yaml /root/txhyjuicefs/organizations/$1/peers/$3/msp/config.yaml
+# 复制文件函数
+copy_file() {
+  cp $1 $2
+}
 
-infoln "Generate the peer tls"
-set -x
-fabric-ca-client enroll -d -u https://$2:$2@localhost:$4 --caname ca-$1 -M /root/txhyjuicefs/organizations/$1/peers/$3/tls --enrollment.profile tls --csr.hosts $3 --csr.hosts localhost --tls.certfiles /root/txhyjuicefs/organizations/fabric-ca/$1/ca-cert.pem
-{ set +x; } 2>/dev/null
+# 创建组织目录
+create_dir $PEERS_DIR
+create_dir $PEER_DIR
 
-cp /root/txhyjuicefs/organizations/$1/peers/$3/tls/tlscacerts/* /root/txhyjuicefs/organizations/$1/peers/$3/tls/ca.crt
-cp /root/txhyjuicefs/organizations/$1/peers/$3/tls/signcerts/* /root/txhyjuicefs/organizations/$1/peers/$3/tls/server.crt
-cp /root/txhyjuicefs/organizations/$1/peers/$3/tls/keystore/* /root/txhyjuicefs/organizations/$1/peers/$3/tls/server.key
+fabric-ca-client enroll -d -u https://admin:$ORG_NAME@localhost:$PORT --caname ca-$ORG_NAME --tls.certfiles $CA_CLIENT_HOME/ca-cert.pem
+# 注册peer
+fabric-ca-client register -d --caname ca-$ORG_NAME --id.name $PEER_NAME --id.secret $PEER_NAME --id.type peer --tls.certfiles $CA_CLIENT_HOME/ca-cert.pem
+
+# Enroll peer身份
+fabric-ca-client enroll -u https://$PEER_NAME:$PEER_NAME@localhost:$PORT --caname ca-$ORG_NAME -M $PEER_DIR/msp --csr.hosts $PEER_DOMAIN --tls.certfiles $CA_CLIENT_HOME/ca-cert.pem
+
+# Enroll peer TLS身份
+fabric-ca-client enroll -u https://$PEER_NAME:$PEER_NAME@localhost:$PORT --caname ca-$ORG_NAME -M $PEER_DIR/tls --enrollment.profile tls --csr.hosts $PEER_DOMAIN --csr.hosts localhost --tls.certfiles $CA_CLIENT_HOME/ca-cert.pem
+
+# 复制配置文件和证书
+copy_file $ORG_DIR/msp/config.yaml $PEER_DIR/msp/config.yaml
+copy_file $PEER_DIR/tls/tlscacerts/* $PEER_DIR/tls/ca.crt
+copy_file $PEER_DIR/tls/signcerts/* $PEER_DIR/tls/server.crt
+copy_file $PEER_DIR/tls/keystore/* $PEER_DIR/tls/server.key

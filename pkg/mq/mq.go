@@ -22,7 +22,7 @@ type RabbitMQ struct {
 
 // NewRabbitMQ 实例创建
 func NewRabbitMQ() *RabbitMQ {
-	url := fmt.Sprintf("amqp://%s:%s@%s:%s/%s", localconfig.Defaultconfig.AMQP.User, localconfig.Defaultconfig.AMQP.Password, localconfig.Defaultconfig.AMQP.Host, localconfig.Defaultconfig.AMQP.Port, localconfig.Defaultconfig.AMQP.Vhost)
+	url := fmt.Sprintf("amqp://%s:%s@%s:%d/%s", localconfig.Defaultconfig.AMQP.User, localconfig.Defaultconfig.AMQP.Password, localconfig.Defaultconfig.AMQP.Host, localconfig.Defaultconfig.AMQP.Port, localconfig.Defaultconfig.AMQP.Vhost)
 	return &RabbitMQ{QueueName: localconfig.Defaultconfig.AMQP.Queue, Exchange: "", Key: "", Mqurl: url}
 }
 
@@ -44,9 +44,9 @@ func (mq *RabbitMQ) Connect() (err error) {
 }
 
 // PublishSimple 直接模式队列生产
-func (r *RabbitMQ) Publish(message string) (err error) {
+func (r *RabbitMQ) Publish(message []byte) (err error) {
 	//1.申请队列，如果队列不存在会自动创建，存在则跳过创建
-	*r.queue, err = r.channel.QueueDeclare(
+	queue, err := r.channel.QueueDeclare(
 		r.QueueName,
 		//是否持久化
 		true,
@@ -59,6 +59,7 @@ func (r *RabbitMQ) Publish(message string) (err error) {
 		//额外的属性
 		nil,
 	)
+	r.queue = &queue
 	if err != nil {
 		return err
 	}
@@ -72,7 +73,7 @@ func (r *RabbitMQ) Publish(message string) (err error) {
 		false,
 		amqp.Publishing{
 			ContentType: localconfig.Defaultconfig.AMQP.ContentType,
-			Body:        []byte(message),
+			Body:        message,
 		}); err != nil {
 		return err
 	}

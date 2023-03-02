@@ -1,11 +1,13 @@
 package remotessh
 
 import (
+	"fmt"
 	"github.com/hxx258456/pyramidel-chain-baas/pkg/utils/logger"
 	"github.com/melbahja/goph"
 	probing "github.com/prometheus-community/pro-bing"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh"
+	"log"
 	"net"
 	"time"
 )
@@ -103,13 +105,48 @@ func Ping(ip string) int64 {
 	return stats.AvgRtt.Microseconds()
 }
 
-func EnrollBootstrap(client *goph.Client, url, caname string) error {
-	cmd, err := client.Command("fabric-ca-client", "enroll", "-d", "-u", url, "--caname", caname, "--tls.certfiles")
+func EnrollBootstrapCa(client *goph.Client, uscc, port string) error {
+	cmd := fmt.Sprintf("cd ~ && ./txhyjuicefs/scripts/bootstrapca.sh %s %s", uscc, port)
+	out, err := client.Run(cmd)
+	log.Println(cmd)
+	sshLogger.Debug(string(out))
 	if err != nil {
 		return err
 	}
-	if err := cmd.Run(); err != nil {
+
+	return nil
+}
+
+func RegisterPeer(client *goph.Client, uscc, name, domain, port string) error {
+	cmd := fmt.Sprintf("cd ~ && ./txhyjuicefs/scripts/registerpeer.sh %s %s %s %s", uscc, name, domain, port)
+	out, err := client.Run(cmd)
+	log.Println(cmd)
+	sshLogger.Debug(string(out))
+	if err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func RegisterOrderer(client *goph.Client, uscc, name, domain, port string) error {
+	cmd := fmt.Sprintf("cd ~ && ./txhyjuicefs/scripts/registerorderer.sh %s %s %s %s", uscc, name, domain, port)
+	log.Println(cmd)
+	out, err := client.Run(cmd)
+	sshLogger.Debug(string(out))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+func RegisterUser(client *goph.Client, uscc, username, pw, utype, port string) error {
+	cmd := fmt.Sprintf("cd ~ && ./txhyjuicefs/scripts/registeruser.sh %s %s %s %s %s", uscc, username, pw, utype, port)
+	out, err := client.Run(cmd)
+	log.Println(string(out))
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

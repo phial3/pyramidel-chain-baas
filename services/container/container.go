@@ -71,6 +71,7 @@ func NewCaContainerService(host, ip, port, caUser, caPw, orgUscc, serverName, se
 
 func (s *caService) Conn() error {
 	address := fmt.Sprintf("tcp://%s:%d", s.Host, 2376)
+	log.Println(address)
 	cacertPath := fmt.Sprintf("/root/txhyjuicefs/%s/certs/ca.pem", s.PublicIP)
 	certPath := fmt.Sprintf("/root/txhyjuicefs/%s/certs/client.pem", s.PublicIP)
 	keyPath := fmt.Sprintf("/root/txhyjuicefs/%s/certs/client-key.pem", s.PublicIP)
@@ -107,7 +108,10 @@ func (s *caService) GenConfig(ctx context.Context) (*container.Config, *containe
 	ca_server_name := fmt.Sprintf("FABRIC_CA_SERVER_CA_NAME=%s", s.serverName)
 	containerConfig := &container.Config{Image: "harbor.sxtxhy.com/gcbaas-gm/fabric-ca:latest", Cmd: []string{"sh", "-c", "/usr/local/bin/start_ca.sh"}, Env: []string{"FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server",
 		ca_server_name, "FABRIC_CA_SERVER_TLS_ENABLED=true", portenv, user_pass}, ExposedPorts: map[nat.Port]struct{}{nat.Port(port): struct {
-	}{}}, Hostname: s.serverName, Domainname: s.serverDomain}
+	}{}}, Hostname: s.serverName, Domainname: s.serverDomain, Labels: map[string]string{
+		"service": "hyperledger-fabric",
+	},
+	}
 
 	hostConfig := &container.HostConfig{
 		PortBindings: nat.PortMap{

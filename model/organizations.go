@@ -2,15 +2,22 @@ package model
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/hxx258456/pyramidel-chain-baas/pkg/jsonrpcClient"
+	"github.com/hxx258456/pyramidel-chain-baas/pkg/mq"
 	psutilclient "github.com/hxx258456/pyramidel-chain-baas/pkg/psutil/client"
+	"github.com/hxx258456/pyramidel-chain-baas/pkg/remotessh"
 	"github.com/hxx258456/pyramidel-chain-baas/pkg/request/organizations"
 	"github.com/hxx258456/pyramidel-chain-baas/services/container"
 	"github.com/hxx258456/pyramidel-chain-baas/services/loadbalance"
+	"github.com/melbahja/goph"
 	"gorm.io/gorm"
+	"log"
 	"strconv"
+	"sync"
+	"time"
 )
 
 type Organization struct {
@@ -54,15 +61,28 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 	if err != nil {
 		return err
 	}
+	if err := o.Host.QueryById(o.CaHostId, &o.Host); err != nil {
+		tx.Rollback()
+		return err
+	}
+	// ssh申请节点证书
+	sshcli, err := remotessh.ConnectToHost(o.Host.Username, o.Host.Pw, o.Host.UseIp, 22)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	defer func(sshcli *goph.Client) {
+		err := sshcli.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}(sshcli)
 	if !exists {
 		if err := tx.Create(o).Error; err != nil {
 			tx.Rollback()
 			return err
 		}
-		if err := o.Host.QueryById(o.CaHostId, &o.Host); err != nil {
-			tx.Rollback()
-			return err
-		}
+
 		caService := container.NewCaContainerService(o.Host.UseIp, o.Host.PublicIp, strconv.Itoa(int(o.CaServerPort)), o.CaUser, o.CaPassword, o.Uscc, o.CaServerName, o.CaServerDomain)
 		if err := caService.Conn(); err != nil {
 			tx.Rollback()
@@ -74,7 +94,13 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 			tx.Rollback()
 			return err
 		}
+		time.Sleep(time.Second * 5)
+		if err := remotessh.EnrollBootstrapCa(sshcli, o.Uscc, strconv.Itoa(int(o.CaServerPort))); err != nil {
+			log.Println("error bootstrapca脚本执行报错", err)
+			// TODO:添加错误处理机制
+		}
 	}
+
 	cureentPeer := &Peer{}
 	if err := cureentPeer.GetMaxSerial(tx, o.ID); err != nil {
 		tx.Rollback()
@@ -85,12 +111,57 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 		tx.Rollback()
 		return err
 	}
-	peerList, ordererList, err := GroupList(param.NodeList)
+	peerList, ordererList, coNum, err := GroupList(param.NodeList)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
-
+	peerCh := make(chan Peer)
+	ordererCh := make(chan Orderer)
+	wg := &sync.WaitGroup{}
+	wg.Add(coNum)
+	var result []interface{}
+	go func(wg *sync.WaitGroup) {
+		for {
+			select {
+			case peer, ok := <-peerCh:
+				if ok {
+					result = append(result, peer)
+					log.Println("消息队里改变:", result)
+				}
+			case orderer, ok := <-ordererCh:
+				if ok {
+					result = append(result, orderer)
+					log.Println("消息队里改变:", result)
+				}
+			default:
+				if len(result) == coNum {
+					// TODO:amqp send result
+					mqcli := mq.NewRabbitMQ()
+					if err := mqcli.Connect(); err != nil {
+						//wg.Wait()
+						//return
+						panic(err)
+					}
+					var message []byte
+					body, err := json.Marshal(&result)
+					if err != nil {
+						message = []byte(err.Error())
+					} else {
+						message = body
+					}
+					log.Println("message: ", message)
+					if err := mqcli.Publish(message); err != nil {
+						log.Println(err)
+						wg.Wait()
+						return
+					}
+					wg.Wait()
+					return
+				}
+			}
+		}
+	}(wg)
 	for i, v := range peerList {
 		for j := 0; uint(j) < v.NodeNumber; j++ {
 			var (
@@ -118,11 +189,18 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 			if err != nil {
 				return err
 			}
+			ccport, err := psutilclient.CallGetPort(cli)
+			if err != nil {
+				return err
+			}
+			dbport, err := psutilclient.CallGetPort(cli)
 			if err != nil {
 				return err
 			}
 			domain := fmt.Sprintf("peer%d.%s.pcb.com", cureentPeer.SerialNumber+uint(i)+uint(j)+1, o.Uscc)
 			name := fmt.Sprintf("%s_peer%d", o.Uscc, cureentPeer.SerialNumber+uint(i)+uint(j)+1)
+
+			//
 			peer := Peer{
 				Domain:         domain,
 				DueTime:        param.DueTime,
@@ -138,7 +216,55 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 				Port:           uint(port),
 				OrgPackageId:   param.OrgPackageId,
 				Status:         0,
+				CCPort:         ccport,
+				DBPort:         dbport,
 			}
+			go func(wg *sync.WaitGroup) {
+				defer wg.Done()
+				// ssh申请节点证书
+				sshcli, err := remotessh.ConnectToHost(o.Host.Username, o.Host.Pw, o.Host.UseIp, 22)
+				if err != nil {
+					peer.Status = 0
+					peer.Error = err.Error()
+					peerCh <- peer
+					return
+				}
+				defer func(sshcli *goph.Client) {
+					err := sshcli.Close()
+					if err != nil {
+						log.Println(err)
+					}
+				}(sshcli)
+				// ssh申请节点证书
+				log.Println("开始创建peer节点", domain)
+				if err := remotessh.RegisterPeer(sshcli, o.Uscc, name, domain, strconv.Itoa(int(o.CaServerPort))); err != nil {
+					peer.Status = 0
+					peer.Error = err.Error()
+					peerCh <- peer
+					return
+				}
+				log.Println(port, dbport, ccport)
+				// 启动peer节点
+				peerServe := container.NewPeerService(host.PublicIp, host.PublicIp, strconv.Itoa(port), o.Uscc, name, domain, dbport, ccport)
+				if err := peerServe.Conn(); err != nil {
+					peer.Status = 0
+					peer.Error = err.Error()
+					peerCh <- peer
+					return
+				}
+				defer peerServe.Close()
+				ctx := context.Background()
+				containerConf, hostConf := peerServe.GenConfig(ctx)
+				if err := peerServe.Run(ctx, containerConf, hostConf, domain); err != nil {
+					peer.Status = 0
+					peer.Error = err.Error()
+					peerCh <- peer
+					return
+				}
+				peer.Status = 1
+				peerCh <- peer
+				return
+			}(wg)
 			if err := peer.Create(tx); err != nil {
 				tx.Rollback()
 				return err
@@ -178,6 +304,8 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 			}
 			domain := fmt.Sprintf("orderer%d.%s.pcb.com", cureentOrderer.SerialNumber+uint(i)+uint(j)+1, o.Uscc)
 			name := fmt.Sprintf("%s_orderer%d", o.Uscc, cureentOrderer.SerialNumber+uint(i)+uint(j)+1)
+
+			//ordererServe := container.NewPeerService()
 			orderer := Orderer{
 				Domain:         domain,
 				DueTime:        param.DueTime,
@@ -194,6 +322,34 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 				OrgPackageId:   param.OrgPackageId,
 				Status:         0,
 			}
+			go func(wg *sync.WaitGroup) {
+				defer wg.Done()
+
+				// ssh申请节点证书
+				sshcli, err := remotessh.ConnectToHost(o.Host.Username, o.Host.Pw, o.Host.UseIp, 22)
+				if err != nil {
+					orderer.Status = 0
+					orderer.Error = err.Error()
+					ordererCh <- orderer
+					return
+				}
+				defer func(sshcli *goph.Client) {
+					err := sshcli.Close()
+					if err != nil {
+						log.Println(err)
+					}
+				}(sshcli)
+				// ssh申请orderer证书
+				if err := remotessh.RegisterOrderer(sshcli, o.Uscc, name, domain, strconv.Itoa(int(o.CaServerPort))); err != nil {
+					orderer.Status = 0
+					orderer.Error = err.Error()
+					ordererCh <- orderer
+					return
+				}
+				orderer.Status = 1
+				ordererCh <- orderer
+				return
+			}(wg)
 			if err := orderer.Create(tx); err != nil {
 				tx.Rollback()
 				return err
@@ -204,16 +360,18 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 }
 
 // GroupList 将nodelist分组,分为peer组,orderer组
-func GroupList(list []organizations.NodeList) (peerList []organizations.NodeList, ordererList []organizations.NodeList, err error) {
+func GroupList(list []organizations.NodeList) (peerList []organizations.NodeList, ordererList []organizations.NodeList, goroNun int, err error) {
 	for _, v := range list {
 		switch v.NodeType {
 		case 2:
 			peerList = append(peerList, v)
+			goroNun += int(v.NodeNumber)
 		case 1:
 			ordererList = append(ordererList, v)
+			goroNun += int(v.NodeNumber)
 		default:
-			return peerList, ordererList, errors.New("invalid node type")
+			return peerList, ordererList, goroNun, errors.New("invalid node type")
 		}
 	}
-	return peerList, ordererList, nil
+	return peerList, ordererList, goroNun, nil
 }

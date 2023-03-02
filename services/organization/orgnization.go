@@ -9,6 +9,7 @@ import (
 	"github.com/hxx258456/pyramidel-chain-baas/repository/organizations"
 	"github.com/hxx258456/pyramidel-chain-baas/services/container"
 	"github.com/hxx258456/pyramidel-chain-baas/services/loadbalance"
+	"log"
 )
 
 var orgLogger = logger.Lg.Named("services/organization")
@@ -43,7 +44,7 @@ func (s *organizationsService) Add(param organizations2.Organizations) error {
 		s.lb = lb
 		hostId := s.lb.NextService()
 		err = host.QueryById(hostId, host)
-
+		log.Println(lb)
 		if err != nil {
 			return err
 		}
