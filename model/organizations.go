@@ -119,7 +119,7 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 	peerCh := make(chan Peer)
 	ordererCh := make(chan Orderer)
 	wg := &sync.WaitGroup{}
-	wg.Add(coNum)
+	wg.Add(2)
 	var result []interface{}
 	go func(wg *sync.WaitGroup) {
 		for {
@@ -136,13 +136,13 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 				}
 			default:
 				if len(result) == coNum {
-					// TODO:amqp send result
 					mqcli := mq.NewRabbitMQ()
 					if err := mqcli.Connect(); err != nil {
 						//wg.Wait()
 						//return
 						panic(err)
 					}
+					defer mqcli.Destroy()
 					var message []byte
 					body, err := json.Marshal(&result)
 					if err != nil {
@@ -162,200 +162,276 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 			}
 		}
 	}(wg)
-	for i, v := range peerList {
-		for j := 0; uint(j) < v.NodeNumber; j++ {
-			var (
-				hostid uint
-				port   int
-			)
-			lbid := balancer.NextService()
-			if lbid == 0 {
-				hostid = o.CaHostId
-			} else {
-				hostid = lbid
-			}
-			host := &Host{}
-			err = host.QueryById(hostid, host)
 
-			if err != nil {
-				return err
-			}
-			cli, err := jsonrpcClient.ConnetJsonrpc(o.Host.UseIp + ":8082")
-			if err != nil {
-				return err
-			}
-			defer cli.Close()
-			port, err = psutilclient.CallGetPort(cli)
-			if err != nil {
-				return err
-			}
-			ccport, err := psutilclient.CallGetPort(cli)
-			if err != nil {
-				return err
-			}
-			dbport, err := psutilclient.CallGetPort(cli)
-			if err != nil {
-				return err
-			}
-			domain := fmt.Sprintf("peer%d.%s.pcb.com", cureentPeer.SerialNumber+uint(i)+uint(j)+1, o.Uscc)
-			name := fmt.Sprintf("%s_peer%d", o.Uscc, cureentPeer.SerialNumber+uint(i)+uint(j)+1)
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		for i, v := range peerList {
+			for j := 0; uint(j) < v.NodeNumber; j++ {
 
-			//
-			peer := Peer{
-				Domain:         domain,
-				DueTime:        param.DueTime,
-				RestartTime:    param.RestartTime,
-				NodeBandwidth:  v.NodeBandwidth,
-				NodeCore:       v.NodeCore,
-				NodeDisk:       v.NodeDisk,
-				NodeMemory:     v.NodeMemory,
-				Name:           name,
-				SerialNumber:   cureentPeer.SerialNumber + uint(i) + uint(j) + 1,
-				HostId:         hostid,
-				OrganizationId: o.ID,
-				Port:           uint(port),
-				OrgPackageId:   param.OrgPackageId,
-				Status:         0,
-				CCPort:         ccport,
-				DBPort:         dbport,
-			}
-			go func(wg *sync.WaitGroup) {
-				defer wg.Done()
+				domain := fmt.Sprintf("peer%d.%s.pcb.com", cureentPeer.SerialNumber+uint(i)+uint(j)+1, o.Uscc)
+				name := fmt.Sprintf("%s_peer%d", o.Uscc, cureentPeer.SerialNumber+uint(i)+uint(j)+1)
+				//
+				peer := Peer{
+					Domain:         domain,
+					DueTime:        param.DueTime,
+					RestartTime:    param.RestartTime,
+					NodeBandwidth:  v.NodeBandwidth,
+					NodeCore:       v.NodeCore,
+					NodeDisk:       v.NodeDisk,
+					NodeMemory:     v.NodeMemory,
+					Name:           name,
+					SerialNumber:   cureentPeer.SerialNumber + uint(i) + uint(j) + 1,
+					HostId:         0,
+					OrganizationId: o.ID,
+					Port:           uint(0),
+					OrgPackageId:   param.OrgPackageId,
+					Status:         0,
+					CCPort:         0,
+					DBPort:         0,
+				}
+				var (
+					hostid uint
+					port   int
+					err    error
+				)
+				lbid := balancer.NextService()
+				if lbid == 0 {
+					hostid = o.CaHostId
+				} else {
+					hostid = lbid
+				}
+				peer.HostId = hostid
+				host := &Host{}
+				err = host.QueryById(hostid, host)
+
+				if err != nil {
+					tx.Rollback()
+				}
+				cli, err := jsonrpcClient.ConnetJsonrpc(host.UseIp + ":8082")
+				if err != nil {
+					tx.Rollback()
+					peer.Status = 0
+					peer.Error = err.Error()
+					peerCh <- peer
+					continue
+				}
+
+				port, err = psutilclient.CallGetPort(cli)
+				if err != nil {
+					tx.Rollback()
+					peer.Status = 0
+					peer.Error = err.Error()
+					peerCh <- peer
+					continue
+				}
+				peer.Port = uint(port)
+				ccport, err := psutilclient.CallGetPort(cli)
+				if err != nil {
+					tx.Rollback()
+					peer.Status = 0
+					peer.Error = err.Error()
+					peerCh <- peer
+					continue
+				}
+				peer.CCPort = ccport
+				dbport, err := psutilclient.CallGetPort(cli)
+				if err != nil {
+					tx.Rollback()
+					peer.Status = 0
+					peer.Error = err.Error()
+					peerCh <- peer
+					continue
+				}
+				peer.DBPort = dbport
+				// 优化defer改为手动关闭
+				if err = cli.Close(); err != nil {
+					tx.Rollback()
+					peer.Status = 0
+					peer.Error = err.Error()
+					peerCh <- peer
+					continue
+				}
+
 				// ssh申请节点证书
 				sshcli, err := remotessh.ConnectToHost(o.Host.Username, o.Host.Pw, o.Host.UseIp, 22)
 				if err != nil {
+					tx.Rollback()
 					peer.Status = 0
 					peer.Error = err.Error()
 					peerCh <- peer
-					return
+					continue
 				}
-				defer func(sshcli *goph.Client) {
-					err := sshcli.Close()
-					if err != nil {
-						log.Println(err)
-					}
-				}(sshcli)
 				// ssh申请节点证书
 				log.Println("开始创建peer节点", domain)
 				if err := remotessh.RegisterPeer(sshcli, o.Uscc, name, domain, strconv.Itoa(int(o.CaServerPort))); err != nil {
+					tx.Rollback()
 					peer.Status = 0
 					peer.Error = err.Error()
 					peerCh <- peer
-					return
+					continue
+				}
+
+				if err := sshcli.Close(); err != nil {
+					tx.Rollback()
+					peer.Status = 0
+					peer.Error = err.Error()
+					peerCh <- peer
+					continue
 				}
 				log.Println(port, dbport, ccport)
 				// 启动peer节点
 				peerServe := container.NewPeerService(host.PublicIp, host.PublicIp, strconv.Itoa(port), o.Uscc, name, domain, dbport, ccport)
 				if err := peerServe.Conn(); err != nil {
+					tx.Rollback()
 					peer.Status = 0
 					peer.Error = err.Error()
 					peerCh <- peer
-					return
+					continue
 				}
-				defer peerServe.Close()
 				ctx := context.Background()
 				containerConf, hostConf := peerServe.GenConfig(ctx)
 				if err := peerServe.Run(ctx, containerConf, hostConf, domain); err != nil {
+					tx.Rollback()
 					peer.Status = 0
 					peer.Error = err.Error()
 					peerCh <- peer
-					return
+					continue
+				}
+				if err := peerServe.Close(); err != nil {
+					tx.Rollback()
+					peer.Status = 0
+					peer.Error = err.Error()
+					peerCh <- peer
+					continue
+				}
+				if err := peer.Create(tx); err != nil {
+					tx.Rollback()
+					peer.Status = 0
+					peer.Error = err.Error()
+					peerCh <- peer
+					continue
 				}
 				peer.Status = 1
 				peerCh <- peer
-				return
-			}(wg)
-			if err := peer.Create(tx); err != nil {
-				tx.Rollback()
-				return err
+				continue
 			}
+
 		}
+	}(wg)
 
-	}
-	for i, v := range ordererList {
-		for j := 0; uint(j) < v.NodeNumber; j++ {
-			var (
-				hostid uint
-				port   int
-			)
-			lbid := balancer.NextService()
-			if lbid == 0 {
-				hostid = o.CaHostId
-			} else {
-				hostid = lbid
-			}
-			host := &Host{}
-			err = host.QueryById(hostid, host)
+	// TODO:优化并发逻辑，修改orderer为支持多节点创建申请
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		for i, v := range ordererList {
+			for j := 0; uint(j) < v.NodeNumber; j++ {
 
-			if err != nil {
-				return err
-			}
-			cli, err := jsonrpcClient.ConnetJsonrpc(o.Host.UseIp + ":8082")
-			if err != nil {
-				return err
-			}
-			defer cli.Close()
-			port, err = psutilclient.CallGetPort(cli)
-			if err != nil {
-				return err
-			}
-			if err != nil {
-				return err
-			}
-			domain := fmt.Sprintf("orderer%d.%s.pcb.com", cureentOrderer.SerialNumber+uint(i)+uint(j)+1, o.Uscc)
-			name := fmt.Sprintf("%s_orderer%d", o.Uscc, cureentOrderer.SerialNumber+uint(i)+uint(j)+1)
+				// 节点域名和名称
+				domain := fmt.Sprintf("orderer%d.%s.pcb.com", cureentOrderer.SerialNumber+uint(i)+uint(j)+1, o.Uscc)
+				name := fmt.Sprintf("%s_orderer%d", o.Uscc, cureentOrderer.SerialNumber+uint(i)+uint(j)+1)
 
-			//ordererServe := container.NewPeerService()
-			orderer := Orderer{
-				Domain:         domain,
-				DueTime:        param.DueTime,
-				RestartTime:    param.RestartTime,
-				NodeBandwidth:  v.NodeBandwidth,
-				NodeCore:       v.NodeCore,
-				NodeDisk:       v.NodeDisk,
-				NodeMemory:     v.NodeMemory,
-				Name:           name,
-				SerialNumber:   cureentOrderer.SerialNumber + uint(i) + uint(j) + 1,
-				HostId:         hostid,
-				OrganizationId: o.ID,
-				Port:           uint(port),
-				OrgPackageId:   param.OrgPackageId,
-				Status:         0,
-			}
-			go func(wg *sync.WaitGroup) {
-				defer wg.Done()
+				//ordererServe := container.NewPeerService()
+				orderer := Orderer{
+					Domain:         domain,
+					DueTime:        param.DueTime,
+					RestartTime:    param.RestartTime,
+					NodeBandwidth:  v.NodeBandwidth,
+					NodeCore:       v.NodeCore,
+					NodeDisk:       v.NodeDisk,
+					NodeMemory:     v.NodeMemory,
+					Name:           name,
+					SerialNumber:   cureentOrderer.SerialNumber + uint(i) + uint(j) + 1,
+					HostId:         0,
+					OrganizationId: o.ID,
+					Port:           uint(0),
+					OrgPackageId:   param.OrgPackageId,
+					Status:         0,
+				}
+				var (
+					hostid uint
+					port   int
+				)
+				lbid := balancer.NextService()
+				if lbid == 0 {
+					hostid = o.CaHostId
+				} else {
+					hostid = lbid
+				}
+				orderer.HostId = hostid
+				host := &Host{}
+				err = host.QueryById(hostid, host)
 
-				// ssh申请节点证书
+				if err != nil {
+					tx.Rollback()
+					orderer.Error = err.Error()
+					orderer.Status = 0
+					ordererCh <- orderer
+					continue
+				}
+				cli, err := jsonrpcClient.ConnetJsonrpc(host.UseIp + ":8082")
+				if err != nil {
+					tx.Rollback()
+					orderer.Error = err.Error()
+					orderer.Status = 0
+					ordererCh <- orderer
+					continue
+				}
+				port, err = psutilclient.CallGetPort(cli)
+				if err != nil {
+					tx.Rollback()
+					orderer.Error = err.Error()
+					orderer.Status = 0
+					ordererCh <- orderer
+					continue
+				}
+				orderer.Port = uint(port)
+
+				if err := cli.Close(); err != nil {
+					tx.Rollback()
+					orderer.Error = err.Error()
+					orderer.Status = 0
+					ordererCh <- orderer
+					continue
+				}
+
+				// ***********    节点证书申请    **********
 				sshcli, err := remotessh.ConnectToHost(o.Host.Username, o.Host.Pw, o.Host.UseIp, 22)
 				if err != nil {
-					orderer.Status = 0
+					tx.Rollback()
 					orderer.Error = err.Error()
+					orderer.Status = 0
 					ordererCh <- orderer
-					return
+					continue
 				}
-				defer func(sshcli *goph.Client) {
-					err := sshcli.Close()
-					if err != nil {
-						log.Println(err)
-					}
-				}(sshcli)
+
 				// ssh申请orderer证书
 				if err := remotessh.RegisterOrderer(sshcli, o.Uscc, name, domain, strconv.Itoa(int(o.CaServerPort))); err != nil {
-					orderer.Status = 0
+					tx.Rollback()
 					orderer.Error = err.Error()
+					orderer.Status = 0
 					ordererCh <- orderer
-					return
+					continue
+				}
+				if err := sshcli.Close(); err != nil {
+					tx.Rollback()
+					orderer.Error = err.Error()
+					orderer.Status = 0
+					ordererCh <- orderer
+					continue
+				}
+
+				if err := orderer.Create(tx); err != nil {
+					tx.Rollback()
+					orderer.Error = err.Error()
+					orderer.Status = 0
+					ordererCh <- orderer
+					continue
 				}
 				orderer.Status = 1
 				ordererCh <- orderer
-				return
-			}(wg)
-			if err := orderer.Create(tx); err != nil {
-				tx.Rollback()
-				return err
+				continue
 			}
 		}
-	}
+	}(wg)
 	return nil
 }
 

@@ -11,4 +11,6 @@ package constants
 const (
 	ShortTimeLayout = "2006-01-02T15:04:05"
 	OfficialPath    = "/etc/txhy/pycbaas"
+
+	TOKEN_TIME_FORMAT_SIMPLE = "20060102150405"
 )

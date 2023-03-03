@@ -4,8 +4,10 @@ go 1.17
 
 require (
 	github.com/docker/docker v23.0.0+incompatible
+	github.com/docker/go-connections v0.4.0
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/gin-gonic/gin v1.8.2
+	github.com/hxx258456/ccgo v0.0.4
 	github.com/jinzhu/copier v0.3.5
 	github.com/melbahja/goph v1.3.0
 	github.com/natefinch/lumberjack v2.0.0+incompatible
@@ -22,10 +24,10 @@ require (
 )
 
 require (
+	gitee.com/zhaochuninhefei/zcgolog v0.0.16 // indirect
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/Microsoft/go-winio v0.6.0 // indirect
 	github.com/docker/distribution v2.8.1+incompatible // indirect
-	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect

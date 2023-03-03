@@ -12,6 +12,9 @@ type Service struct {
 	mu             sync.Mutex
 }
 
+// TODO:添加权重动态更新算法
+// TODO:lb均衡器全局化
+// TODO:添加连接数最大限制
 type LoadBalancer struct {
 	Services []Service
 }

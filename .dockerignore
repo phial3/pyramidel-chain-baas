@@ -17,4 +17,4 @@ ci
 docs
 images
 release_notes
-vagrant
+vagrant/pkg/gmtoken/testdata/

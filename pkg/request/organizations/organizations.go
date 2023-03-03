@@ -6,11 +6,11 @@ import (
 
 // Organizations 新增组织
 type Organizations struct {
-	OrgUscc      string              `json:"orgUscc" binding:"required"`
-	DueTime      localtime.LocalTime `json:"dueTime" binding:"required"`
-	RestartTime  localtime.LocalTime `json:"-"`
-	NodeList     []NodeList          `json:"nodeList" binding:"required"`
-	OrgPackageId uint64              `json:"orgPackageId" binding:"required"`
+	OrgUscc      string               `json:"orgUscc" binding:"required"`
+	DueTime      *localtime.LocalTime `json:"dueTime" binding:"required"`
+	RestartTime  *localtime.LocalTime `json:"-"`
+	NodeList     []NodeList           `json:"nodeList" binding:"required"`
+	OrgPackageId uint64               `json:"orgPackageId" binding:"required"`
 }
 type NodeList struct {
 	NodeType      int  `json:"nodeType" binding:"required"`

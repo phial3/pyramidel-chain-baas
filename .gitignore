@@ -35,3 +35,5 @@ go.work
 config.yaml
 .run
 go_run_*
+*testdata/
+!/pkg/gmtoken/testdata/

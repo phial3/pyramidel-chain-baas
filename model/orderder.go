@@ -6,23 +6,23 @@ import (
 )
 
 type Orderer struct {
-	Domain         string              `json:"Domain" gorm:"column:Domain;unique"`    // 域名 ${uscc}.example.com
-	DueTime        localtime.LocalTime `json:"dueTime" gorm:"column:dueTime"`         // 到期时间
-	RestartTime    localtime.LocalTime `json:"restartTime" gorm:"column:restartTime"` // 重启时间
-	NodeCore       uint                `json:"nodeCore" gorm:"column:nodeCore"`
-	NodeMemory     uint                `json:"nodeMemory" gorm:"column:nodeMemory"`
-	NodeBandwidth  uint                `json:"nodeBandwidth" gorm:"column:nodeBandwidth"`
-	NodeDisk       uint                `json:"nodeDisk" gorm:"column:nodeDisk"`
-	HostId         uint                `json:"hostId" gorm:"column:hostId"` // 所在主机
-	Host           Host                `json:"_" gorm:"foreignKey:HostId"`
-	SerialNumber   uint                `json:"serialNumber" gorm:"column:serialNumber"`     // 序列号
-	Port           uint                `json:"port" gorm:"column:port"`                     // 占用端口号
-	Name           string              `json:"name" gorm:"column:name"`                     // 节点名ex: orderer1
-	OrganizationId uint                `json:"organizationId" gorm:"column:organizationId"` // 所属组织
-	Organization   Organization        `json:"organization" gorm:"foreignKey:OrganizationId" `
-	OrgPackageId   uint64              `json:"orgPackageId" gorm:"column:orgPackageId"` // 订单id
-	Status         int                 `json:"status" gorm:"column:status"`             // 状态
-	Error          string              `json:"error" gorm:"column:_"`                   // 节点当前错误
+	Domain         string               `json:"Domain" gorm:"column:Domain;unique"`    // 域名 ${uscc}.example.com
+	DueTime        *localtime.LocalTime `json:"dueTime" gorm:"column:dueTime"`         // 到期时间
+	RestartTime    *localtime.LocalTime `json:"restartTime" gorm:"column:restartTime"` // 重启时间
+	NodeCore       uint                 `json:"nodeCore" gorm:"column:nodeCore"`
+	NodeMemory     uint                 `json:"nodeMemory" gorm:"column:nodeMemory"`
+	NodeBandwidth  uint                 `json:"nodeBandwidth" gorm:"column:nodeBandwidth"`
+	NodeDisk       uint                 `json:"nodeDisk" gorm:"column:nodeDisk"`
+	HostId         uint                 `json:"hostId" gorm:"column:hostId"` // 所在主机
+	Host           Host                 `json:"_" gorm:"foreignKey:HostId"`
+	SerialNumber   uint                 `json:"serialNumber" gorm:"column:serialNumber"`     // 序列号
+	Port           uint                 `json:"port" gorm:"column:port"`                     // 占用端口号
+	Name           string               `json:"name" gorm:"column:name"`                     // 节点名ex: orderer1
+	OrganizationId uint                 `json:"organizationId" gorm:"column:organizationId"` // 所属组织
+	Organization   Organization         `json:"organization" gorm:"foreignKey:OrganizationId" `
+	OrgPackageId   uint64               `json:"orgPackageId" gorm:"column:orgPackageId"` // 订单id
+	Status         int                  `json:"status" gorm:"column:status"`             // 状态
+	Error          string               `json:"error" gorm:"column:_"`                   // 节点当前错误
 
 	Base
 }

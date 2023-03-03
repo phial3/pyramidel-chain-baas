@@ -7,7 +7,7 @@ import (
 
 type Base struct {
 	ID        uint `gorm:"primarykey"`
-	CreatedAt localtime.LocalTime
-	UpdatedAt localtime.LocalTime
+	CreatedAt *localtime.LocalTime
+	UpdatedAt *localtime.LocalTime
 	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
