@@ -14,7 +14,7 @@ type Peer struct {
 	NodeBandwidth  uint                `json:"nodeBandwidth" gorm:"column:nodeBandwidth"`
 	NodeDisk       uint                `json:"nodeDisk" gorm:"column:nodeDisk"`
 	HostId         uint                `json:"hostId" gorm:"column:hostId"` // 所在主机
-	Host           Host                `json:"host" gorm:"foreignKey:HostId" `
+	Host           Host                `json:"_" gorm:"foreignKey:HostId" `
 	Port           uint                `json:"port" gorm:"column:port"`                     // 占用端口号
 	Name           string              `json:"name" gorm:"column:name"`                     // 节点名ex: peer1
 	SerialNumber   uint                `json:"serialNumber" gorm:"column:serialNumber"`     // 序列号

@@ -150,7 +150,7 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 					} else {
 						message = body
 					}
-					log.Println("message: ", message)
+					log.Println("message: ", string(message))
 					if err := mqcli.Publish(message); err != nil {
 						log.Println(err)
 						wg.Wait()
