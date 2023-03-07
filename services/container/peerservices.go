@@ -10,7 +10,6 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"log"
-	"strconv"
 )
 
 var _ ContainerService = (*peerService)(nil)
@@ -42,9 +41,9 @@ func (p *peerService) Run(ctx context.Context, config *container.Config, config2
 		return err
 	}
 
-	if err := p.SetNetwork(ctx, createRes.ID); err != nil {
-		return err
-	}
+	//if err := p.SetNetwork(ctx, createRes.ID); err != nil {
+	//	return err
+	//}
 	log.Println(config, config2)
 	if err := p.cli.ContainerStart(ctx, createRes.ID, types.ContainerStartOptions{}); err != nil {
 		return err
@@ -99,8 +98,8 @@ func (p *peerService) GenConfig(ctx context.Context) (*container.Config, *contai
 	couchUser := fmt.Sprintf("CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin")
 	couchPw := fmt.Sprintf("CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=txhy2022com")
 
-	port := fmt.Sprintf("%s/tcp", p.Port)
-	ccport := fmt.Sprintf("%s/tcp", p.Port)
+	portset := p.buildContainerPorts()
+	portbinding := p.buildContainerPortBindingOptions()
 
 	containerConfig := &container.Config{
 		Image: "harbor.sxtxhy.com/gcbaas-gm/fabric-peer:latest",
@@ -128,15 +127,13 @@ func (p *peerService) GenConfig(ctx context.Context) (*container.Config, *contai
 			gossipEndpoint,
 			gossipBootstrapAddress,
 		},
-		Hostname:   p.serverName,
-		Domainname: p.serverDomain,
-		ExposedPorts: map[nat.Port]struct{}{
-			nat.Port(port):   struct{}{},
-			nat.Port(ccport): struct{}{},
-		},
+		Hostname:     p.serverName,
+		Domainname:   p.serverDomain,
+		ExposedPorts: portset,
 		Labels: map[string]string{
 			"service": "hyperledger-fabric",
 		},
+		NetworkDisabled: false,
 	}
 
 	// 创建卷
@@ -147,19 +144,21 @@ func (p *peerService) GenConfig(ctx context.Context) (*container.Config, *contai
 	tlsBind := fmt.Sprintf("/root/txhyjuicefs/organizations/%s/peers/%s/tls:/etc/hyperledger/fabric/tls", p.orgUscc, p.serverDomain)
 	volumeBind := fmt.Sprintf("%s:/var/hyperledger/production", volume.Name)
 	hostConfig := &container.HostConfig{
-		PortBindings: nat.PortMap{
-			nat.Port(port):   []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: p.Port}},
-			nat.Port(ccport): []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: strconv.Itoa(p.ccport)}},
-		},
+		PortBindings: portbinding,
 		Binds: []string{
 			"/var/run/docker.sock:/host/var/run/docker.sock",
 			mspBind,
 			tlsBind,
 			volumeBind,
 		},
+		NetworkMode: "fabric_network",
 		Resources: container.Resources{
 			CPUShares: 1024,
 			Memory:    536870912,
+		},
+		RestartPolicy: container.RestartPolicy{
+			Name:              "always",
+			MaximumRetryCount: 10,
 		},
 	}
 
@@ -195,4 +194,35 @@ func NewPeerService(host, ip, port, orgUscc, serverName, serverDomain string, db
 		dbport:       dbport,
 		ccport:       ccport,
 	}
+}
+
+func (p *peerService) buildContainerPorts() nat.PortSet {
+	ports := nat.PortSet{}
+	ccp := nat.Port(fmt.Sprintf("%d/%s", p.ccport, "tcp"))
+	ports[ccp] = struct{}{}
+
+	sp := nat.Port(fmt.Sprintf("%s/%s", p.Port, "tcp")) //service port
+	ports[sp] = struct{}{}
+
+	return ports
+}
+
+func (p *peerService) buildContainerPortBindingOptions() nat.PortMap {
+	bindings := nat.PortMap{}
+	ccp := nat.Port(fmt.Sprintf("%d/%s", p.ccport, "tcp")) // chaincode port
+	hostccp := fmt.Sprintf("%d", p.ccport)
+	binding := nat.PortBinding{
+		HostIP:   "0.0.0.0",
+		HostPort: hostccp,
+	}
+	bindings[ccp] = append(bindings[ccp], binding)
+
+	sp := nat.Port(fmt.Sprintf("%s/%s", p.Port, "tcp")) //service port
+	hostsp := fmt.Sprintf("%s", p.Port)
+	binding = nat.PortBinding{
+		HostIP:   "0.0.0.0",
+		HostPort: hostsp,
+	}
+	bindings[sp] = append(bindings[sp], binding)
+	return bindings
 }

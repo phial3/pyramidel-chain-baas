@@ -17,7 +17,6 @@ import (
 	"log"
 	"strconv"
 	"sync"
-	"time"
 )
 
 type Organization struct {
@@ -92,12 +91,11 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 		config, D := caService.GenConfig(ctx)
 		if err := caService.Run(ctx, config, D, o.CaServerName); err != nil {
 			tx.Rollback()
-			return err
+			//return err
+			panic(err)
 		}
-		time.Sleep(time.Second * 5)
 		if err := remotessh.EnrollBootstrapCa(sshcli, o.Uscc, strconv.Itoa(int(o.CaServerPort))); err != nil {
-			log.Println("error bootstrapca脚本执行报错", err)
-			// TODO:添加错误处理机制
+			panic(err)
 		}
 	}
 
@@ -188,6 +186,7 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 					Status:         0,
 					CCPort:         0,
 					DBPort:         0,
+					NodeType:       2,
 				}
 				var (
 					hostid uint
@@ -205,51 +204,56 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 				err = host.QueryById(hostid, host)
 
 				if err != nil {
-					tx.Rollback()
+					panic(err)
 				}
 				cli, err := jsonrpcClient.ConnetJsonrpc(host.UseIp + ":8082")
 				if err != nil {
-					tx.Rollback()
-					peer.Status = 0
-					peer.Error = err.Error()
-					peerCh <- peer
-					continue
+					//tx.Rollback()
+					//peer.Status = 0
+					//peer.Error = err.Error()
+					//peerCh <- peer
+					//continue
+					panic(err)
 				}
 
 				port, err = psutilclient.CallGetPort(cli)
 				if err != nil {
-					tx.Rollback()
-					peer.Status = 0
-					peer.Error = err.Error()
-					peerCh <- peer
-					continue
+					//tx.Rollback()
+					//peer.Status = 0
+					//peer.Error = err.Error()
+					//peerCh <- peer
+					//continue
+					panic(err)
 				}
 				peer.Port = uint(port)
 				ccport, err := psutilclient.CallGetPort(cli)
 				if err != nil {
-					tx.Rollback()
-					peer.Status = 0
-					peer.Error = err.Error()
-					peerCh <- peer
-					continue
+					//tx.Rollback()
+					//peer.Status = 0
+					//peer.Error = err.Error()
+					//peerCh <- peer
+					//continue
+					panic(err)
 				}
 				peer.CCPort = ccport
 				dbport, err := psutilclient.CallGetPort(cli)
 				if err != nil {
-					tx.Rollback()
-					peer.Status = 0
-					peer.Error = err.Error()
-					peerCh <- peer
-					continue
+					//tx.Rollback()
+					//peer.Status = 0
+					//peer.Error = err.Error()
+					//peerCh <- peer
+					//continue
+					panic(err)
 				}
 				peer.DBPort = dbport
 				// 优化defer改为手动关闭
 				if err = cli.Close(); err != nil {
-					tx.Rollback()
-					peer.Status = 0
-					peer.Error = err.Error()
-					peerCh <- peer
-					continue
+					//tx.Rollback()
+					//peer.Status = 0
+					//peer.Error = err.Error()
+					//peerCh <- peer
+					//continue
+					panic(err)
 				}
 
 				// ssh申请节点证书
@@ -264,52 +268,58 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 				// ssh申请节点证书
 				log.Println("开始创建peer节点", domain)
 				if err := remotessh.RegisterPeer(sshcli, o.Uscc, name, domain, strconv.Itoa(int(o.CaServerPort))); err != nil {
-					tx.Rollback()
-					peer.Status = 0
-					peer.Error = err.Error()
-					peerCh <- peer
-					continue
+					//tx.Rollback()
+					//peer.Status = 0
+					//peer.Error = err.Error()
+					//peerCh <- peer
+					//continue
+					panic(err)
 				}
 
 				if err := sshcli.Close(); err != nil {
-					tx.Rollback()
-					peer.Status = 0
-					peer.Error = err.Error()
-					peerCh <- peer
-					continue
+					//tx.Rollback()
+					//peer.Status = 0
+					//peer.Error = err.Error()
+					//peerCh <- peer
+					//continue
+					panic(err)
 				}
 				log.Println(port, dbport, ccport)
 				// 启动peer节点
 				peerServe := container.NewPeerService(host.PublicIp, host.PublicIp, strconv.Itoa(port), o.Uscc, name, domain, dbport, ccport)
 				if err := peerServe.Conn(); err != nil {
-					tx.Rollback()
-					peer.Status = 0
-					peer.Error = err.Error()
-					peerCh <- peer
-					continue
+					//tx.Rollback()
+					//peer.Status = 0
+					//peer.Error = err.Error()
+					//peerCh <- peer
+					//continue
+					panic(err)
 				}
 				ctx := context.Background()
 				containerConf, hostConf := peerServe.GenConfig(ctx)
 				if err := peerServe.Run(ctx, containerConf, hostConf, domain); err != nil {
-					tx.Rollback()
-					peer.Status = 0
-					peer.Error = err.Error()
-					peerCh <- peer
-					continue
+					//tx.Rollback()
+					//peer.Status = 0
+					//peer.Error = err.Error()
+					//peerCh <- peer
+					//continue
+					panic(err)
 				}
 				if err := peerServe.Close(); err != nil {
-					tx.Rollback()
-					peer.Status = 0
-					peer.Error = err.Error()
-					peerCh <- peer
-					continue
+					//tx.Rollback()
+					//peer.Status = 0
+					//peer.Error = err.Error()
+					//peerCh <- peer
+					//continue
+					panic(err)
 				}
 				if err := peer.Create(tx); err != nil {
-					tx.Rollback()
-					peer.Status = 0
-					peer.Error = err.Error()
-					peerCh <- peer
-					continue
+					//tx.Rollback()
+					//peer.Status = 0
+					//peer.Error = err.Error()
+					//peerCh <- peer
+					//continue
+					panic(err)
 				}
 				peer.Status = 1
 				peerCh <- peer
@@ -345,6 +355,7 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 					Port:           uint(0),
 					OrgPackageId:   param.OrgPackageId,
 					Status:         0,
+					NodeType:       1,
 				}
 				var (
 					hostid uint
@@ -405,26 +416,29 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 
 				// ssh申请orderer证书
 				if err := remotessh.RegisterOrderer(sshcli, o.Uscc, name, domain, strconv.Itoa(int(o.CaServerPort))); err != nil {
-					tx.Rollback()
-					orderer.Error = err.Error()
-					orderer.Status = 0
-					ordererCh <- orderer
-					continue
+					//tx.Rollback()
+					//orderer.Error = err.Error()
+					//orderer.Status = 0
+					//ordererCh <- orderer
+					//continue
+					panic(err)
 				}
 				if err := sshcli.Close(); err != nil {
-					tx.Rollback()
-					orderer.Error = err.Error()
-					orderer.Status = 0
-					ordererCh <- orderer
-					continue
+					//tx.Rollback()
+					//orderer.Error = err.Error()
+					//orderer.Status = 0
+					//ordererCh <- orderer
+					//continue
+					panic(err)
 				}
 
 				if err := orderer.Create(tx); err != nil {
-					tx.Rollback()
-					orderer.Error = err.Error()
-					orderer.Status = 0
-					ordererCh <- orderer
-					continue
+					//tx.Rollback()
+					//orderer.Error = err.Error()
+					//orderer.Status = 0
+					//ordererCh <- orderer
+					//continue
+					panic(err)
 				}
 				orderer.Status = 1
 				ordererCh <- orderer

@@ -22,6 +22,16 @@ type ordererService struct {
 	cli          *client.Client
 }
 
+func (o *ordererService) buildContainerPorts() nat.PortSet {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (o *ordererService) buildContainerPortBindingOptions() nat.PortMap {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (o *ordererService) Run(ctx context.Context, config *container.Config, config2 *container.HostConfig, s string) error {
 	//TODO implement me
 	panic("implement me")
@@ -65,9 +75,8 @@ func (o *ordererService) GenConfig(ctx context.Context) (*container.Config, *con
 	mspId := fmt.Sprintf("ORDERER_GENERAL_LOCALMSPID=%sMsp", o.orgUscc)
 	orderer_host := fmt.Sprintf("ORDERER_HOST=%s", o.serverDomain)
 	listenPort := fmt.Sprintf("ORDERER_GENERAL_LISTENPORT=%s", o.Port)
-
-	port := fmt.Sprintf("%s/tcp", o.Port)
-
+	portset := o.buildContainerPorts()
+	portbinding := o.buildContainerPortBindingOptions()
 	containerConfig := &container.Config{
 		Image: "harbor.sxtxhy.com/gcbaas-gm/fabric-orderer:latest",
 		Cmd:   []string{"orderer"},
@@ -88,14 +97,13 @@ func (o *ordererService) GenConfig(ctx context.Context) (*container.Config, *con
 			orderer_host,
 			listenPort,
 		},
-		Hostname:   o.serverDomain,
-		Domainname: o.serverDomain,
-		ExposedPorts: map[nat.Port]struct{}{
-			nat.Port(port): struct{}{},
-		},
+		Hostname:     o.serverDomain,
+		Domainname:   o.serverDomain,
+		ExposedPorts: portset,
 		Labels: map[string]string{
 			"service": "hyperledger-fabric",
 		},
+		NetworkDisabled: false,
 	}
 
 	// 创建卷
@@ -106,9 +114,7 @@ func (o *ordererService) GenConfig(ctx context.Context) (*container.Config, *con
 	tlsBind := fmt.Sprintf("/root/txhyjuicefs/organizations/%s/orderers/%s/tls:/etc/hyperledger/fabric/tls", o.orgUscc, o.serverDomain)
 	volumeBind := fmt.Sprintf("%s:/var/hyperledger/production/orderer", volume.Name)
 	hostConfig := &container.HostConfig{
-		PortBindings: nat.PortMap{
-			nat.Port(port): []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: o.Port}},
-		},
+		PortBindings: portbinding,
 		Binds: []string{
 			"/root/txhyjuicefs/system-genesis-block/genesis.block:/var/hyperledger/orderer/orderer.genesis.block",
 			mspBind,
@@ -119,6 +125,7 @@ func (o *ordererService) GenConfig(ctx context.Context) (*container.Config, *con
 			CPUShares: 1024,
 			Memory:    536870912,
 		},
+		NetworkMode: "fabric_network",
 	}
 
 	return containerConfig, hostConfig

@@ -14,17 +14,18 @@ type Peer struct {
 	NodeBandwidth  uint                 `json:"nodeBandwidth" gorm:"column:nodeBandwidth"`
 	NodeDisk       uint                 `json:"nodeDisk" gorm:"column:nodeDisk"`
 	HostId         uint                 `json:"hostId" gorm:"column:hostId"` // 所在主机
-	Host           Host                 `json:"_" gorm:"foreignKey:HostId" `
+	Host           Host                 `json:"-" gorm:"foreignKey:HostId" `
 	Port           uint                 `json:"port" gorm:"column:port"`                     // 占用端口号
 	Name           string               `json:"name" gorm:"column:name"`                     // 节点名ex: peer1
 	SerialNumber   uint                 `json:"serialNumber" gorm:"column:serialNumber"`     // 序列号
 	OrganizationId uint                 `json:"organizationId" gorm:"column:organizationId"` // 所属组织
-	Organization   Organization         `json:"organization" gorm:"foreignKey:OrganizationId" `
+	Organization   Organization         `json:"-" gorm:"foreignKey:OrganizationId" `
 	OrgPackageId   uint64               `json:"orgPackageId" gorm:"column:orgPackageId"` // 订单id
 	Status         int                  `json:"status" gorm:"column:status"`             // 状态
 	CCPort         int                  `json:"ccPort" gorm:"column:ccPort"`             // 链码服务端口
 	DBPort         int                  `json:"dbPort" gorm:"column:dbPort"`             // couchdb 端口
-	Error          string               `json:"error" gorm:"column:_"`                   // 节点当前错误          //
+	Error          string               `json:"error" gorm:"column:_"`                   // 节点当前错误
+	NodeType       int                  `json:"nodeType" gorm:"column:_"`                // 2代表peer
 	Base
 }
 

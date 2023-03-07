@@ -9,7 +9,6 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"log"
-	"strconv"
 )
 
 var _ ContainerService = (*couchService)(nil)
@@ -22,6 +21,25 @@ type couchService struct {
 	port     int
 	pw       string
 	cli      *client.Client
+}
+
+func (c *couchService) buildContainerPorts() nat.PortSet {
+	ports := nat.PortSet{}
+	p := nat.Port(fmt.Sprintf("%d/%s", c.port, "tcp"))
+	ports[p] = struct{}{}
+	return ports
+}
+
+func (c *couchService) buildContainerPortBindingOptions() nat.PortMap {
+	bindings := nat.PortMap{}
+	p := nat.Port(fmt.Sprintf("%d/%s", c.port, "tcp")) // chaincode port
+	hostp := fmt.Sprintf("%d", c.port)
+	binding := nat.PortBinding{
+		HostIP:   "0.0.0.0",
+		HostPort: hostp,
+	}
+	bindings[p] = append(bindings[p], binding)
+	return bindings
 }
 
 func NewCouchService(host, publicIP, name, domain, pw string, port int) ContainerService {
@@ -41,9 +59,9 @@ func (c *couchService) Run(ctx context.Context, config *container.Config, config
 		return err
 	}
 
-	if err := c.SetNetwork(ctx, createRes.ID); err != nil {
-		return err
-	}
+	//if err := c.SetNetwork(ctx, createRes.ID); err != nil {
+	//	return err
+	//}
 	log.Println(config, config2)
 	if err := c.cli.ContainerStart(ctx, createRes.ID, types.ContainerStartOptions{}); err != nil {
 		return err
@@ -85,7 +103,8 @@ func (c *couchService) Conn() error {
 }
 
 func (c *couchService) GenConfig(ctx context.Context) (*container.Config, *container.HostConfig) {
-	port := fmt.Sprintf("%d/tcp", c.port)
+	portset := c.buildContainerPorts()
+	portbidng := c.buildContainerPortBindingOptions()
 
 	containerConfig := &container.Config{
 		Image: "harbor.sxtxhy.com/gcbaas-gm/couchdb:3.1.1",
@@ -93,21 +112,18 @@ func (c *couchService) GenConfig(ctx context.Context) (*container.Config, *conta
 			"COUCHDB_USER=admin",
 			"COUCHDB_PASSWORD=adminpw",
 		},
-		Hostname:   c.domain,
-		Domainname: c.domain,
-		ExposedPorts: map[nat.Port]struct{}{
-			nat.Port(port): struct{}{},
-		},
+		Hostname:     c.domain,
+		Domainname:   c.domain,
+		ExposedPorts: portset,
 		Labels: map[string]string{
 			"service": "hyperledger-fabric",
 		},
+		NetworkDisabled: false,
 	}
 
 	volumeBind := fmt.Sprintf("/root/txhyjuicefs/%s:/opt/couchdb/data", c.name)
 	hostConfig := &container.HostConfig{
-		PortBindings: nat.PortMap{
-			nat.Port(port): []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: strconv.Itoa(c.port)}},
-		},
+		PortBindings: portbidng,
 		Binds: []string{
 			volumeBind,
 		},
@@ -115,6 +131,7 @@ func (c *couchService) GenConfig(ctx context.Context) (*container.Config, *conta
 			CPUShares: 1024,
 			Memory:    536870912,
 		},
+		NetworkMode: "fabric_network",
 	}
 
 	return containerConfig, hostConfig

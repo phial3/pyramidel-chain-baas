@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -22,6 +23,8 @@ type ContainerService interface {
 	Conn() error
 	GenConfig(context.Context) (*container.Config, *container.HostConfig)
 	SetNetwork(context.Context, string) error
+	buildContainerPorts() nat.PortSet
+	buildContainerPortBindingOptions() nat.PortMap
 }
 
 type caService struct {
@@ -34,6 +37,29 @@ type caService struct {
 	serverName   string
 	serverDomain string
 	cli          *client.Client
+}
+
+func (s *caService) buildContainerPorts() nat.PortSet {
+	ports := nat.PortSet{}
+	p := nat.Port(fmt.Sprintf("%s/%s", s.Port, "tcp"))
+	ports[p] = struct{}{}
+
+	sp := nat.Port(fmt.Sprintf("%s/%s", s.Port, "tcp")) //service port
+	ports[sp] = struct{}{}
+
+	return ports
+}
+
+func (s *caService) buildContainerPortBindingOptions() nat.PortMap {
+	bindings := nat.PortMap{}
+	ccp := nat.Port(fmt.Sprintf("%s/%s", s.Port, "tcp")) // chaincode port
+	hostccp := fmt.Sprintf("%s", s.Port)
+	binding := nat.PortBinding{
+		HostIP:   "0.0.0.0",
+		HostPort: hostccp,
+	}
+	bindings[ccp] = append(bindings[ccp], binding)
+	return bindings
 }
 
 func (s *caService) Login(ctx context.Context) error {
@@ -90,38 +116,52 @@ func (s *caService) Run(ctx context.Context, config *container.Config, hostConfi
 		return err
 	}
 
-	if err := s.SetNetwork(ctx, createRes.ID); err != nil {
-		return err
-	}
+	//if err := s.SetNetwork(ctx, createRes.ID); err != nil {
+	//	return err
+	//}
 	log.Println(config, hostConfig)
 	if err := s.cli.ContainerStart(ctx, createRes.ID, types.ContainerStartOptions{}); err != nil {
 		return err
+	}
+	// 等待容器执行完成并返回结果
+	statusCh, errCh := s.cli.ContainerWait(ctx, createRes.ID, "")
+	select {
+	case err := <-errCh:
+		if err != nil {
+			return err
+		}
+	case status := <-statusCh:
+		if status.Error != nil {
+			return errors.New(status.Error.Message)
+		} else {
+			return nil
+		}
 	}
 	return nil
 }
 
 func (s *caService) GenConfig(ctx context.Context) (*container.Config, *container.HostConfig) {
-	port := fmt.Sprintf("%s/tcp", s.Port)
+	portset := s.buildContainerPorts()
+	portbinding := s.buildContainerPortBindingOptions()
 	portenv := fmt.Sprintf("FABRIC_CA_SERVER_PORT=%s", s.Port)
 	binddir := fmt.Sprintf("/root/txhyjuicefs/organizations/fabric-ca/%s:/etc/hyperledger/fabric-ca-server", s.orgUscc)
 	user_pass := fmt.Sprintf("BOOTSTRAP_USER_PASS=%s:%s", s.caUser, s.caPw)
 	ca_server_name := fmt.Sprintf("FABRIC_CA_SERVER_CA_NAME=%s", s.serverName)
 	containerConfig := &container.Config{Image: "harbor.sxtxhy.com/gcbaas-gm/fabric-ca:latest", Cmd: []string{"sh", "-c", "/usr/local/bin/start_ca.sh"}, Env: []string{"FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server",
-		ca_server_name, "FABRIC_CA_SERVER_TLS_ENABLED=true", portenv, user_pass}, ExposedPorts: map[nat.Port]struct{}{nat.Port(port): struct {
-	}{}}, Hostname: s.serverName, Domainname: s.serverDomain, Labels: map[string]string{
+		ca_server_name, "FABRIC_CA_SERVER_TLS_ENABLED=true", portenv, user_pass}, ExposedPorts: portset, Hostname: s.serverName, Domainname: s.serverDomain, Labels: map[string]string{
 		"service": "hyperledger-fabric",
 	},
+		NetworkDisabled: false,
 	}
 
 	hostConfig := &container.HostConfig{
-		PortBindings: nat.PortMap{
-			nat.Port(port): []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: s.Port}},
-		},
-		Binds: []string{binddir},
+		PortBindings: portbinding,
+		Binds:        []string{binddir},
 		Resources: container.Resources{
 			CPUShares: 1024,
 			Memory:    536870912,
 		},
+		NetworkMode: "fabric_network",
 	}
 
 	return containerConfig, hostConfig
