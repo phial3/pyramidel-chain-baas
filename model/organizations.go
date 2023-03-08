@@ -449,6 +449,13 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 	return nil
 }
 
+func (o *Organization) FindByUscc(uscc string, result interface{}) error {
+	if err := db.Preload("Host").Where("uscc = ?", uscc).Find(result).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 // GroupList 将nodelist分组,分为peer组,orderer组
 func GroupList(list []organizations.NodeList) (peerList []organizations.NodeList, ordererList []organizations.NodeList, goroNun int, err error) {
 	for _, v := range list {

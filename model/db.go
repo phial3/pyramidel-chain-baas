@@ -26,6 +26,7 @@ func connect() *gorm.DB {
 	db.AutoMigrate(&Organization{})
 	db.AutoMigrate(&Peer{})
 	db.AutoMigrate(&Orderer{})
+	db.AutoMigrate(&Member{})
 	return db
 }
 

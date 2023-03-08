@@ -17,6 +17,7 @@ type=$4
 ca_port=$5
 ca_name=ca-$uscc
 ca_client_home=/root/txhyjuicefs/organizations/fabric-ca/$uscc
+org_dir=/root/txhyjuicefs/organizations/$uscc
 user_home=/root/txhyjuicefs/organizations/$uscc/users/$username@$uscc.pcb.com
 
 fabric-ca-client enroll -d -u https://admin:$uscc@localhost:$ca_port --caname ca-$uscc --tls.certfiles ca_client_home/ca-cert.pem
@@ -28,10 +29,11 @@ fabric-ca-client enroll -u https://$username:$password@localhost:$ca_port --cana
 fabric-ca-client enroll -u https://$username:$password@localhost:$ca_port --caname $ca_name -M $user_home/tls --enrollment.profile tls --tls.certfiles $ca_client_home/ca-cert.pem
 
 # Copy user's certs to appropriate locations
+mkdir -p  $user_home/msp/tlscacerts
 cp $ca_client_home/ca-cert.pem $user_home/msp/tlscacerts/ca.crt
 cp $user_home/tls/tlscacerts/* $user_home/tls/ca.crt
 cp $user_home/tls/signcerts/* $user_home/tls/client.crt
 cp $user_home/tls/keystore/* $user_home/tls/client.key
 
 # Copy config.yaml to user's msp directory
-cp $ca_client_home/msp/config.yaml $user_home/msp/config.yaml
+cp $org_dir/msp/config.yaml $user_home/msp/config.yaml

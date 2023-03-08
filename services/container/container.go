@@ -1,15 +1,17 @@
 package container
 
 import (
+	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
+	"io"
 	"log"
+	"strings"
 )
 
 var _ ContainerService = (*caService)(nil)
@@ -123,21 +125,30 @@ func (s *caService) Run(ctx context.Context, config *container.Config, hostConfi
 	if err := s.cli.ContainerStart(ctx, createRes.ID, types.ContainerStartOptions{}); err != nil {
 		return err
 	}
-	// 等待容器执行完成并返回结果
-	statusCh, errCh := s.cli.ContainerWait(ctx, createRes.ID, "")
-	select {
-	case err := <-errCh:
-		if err != nil {
-			return err
+	log.Println("开始获取日志等待!!!!!!!!!!")
+	for {
+		// 等待容器执行完成并返回结果
+		logsOptions := types.ContainerLogsOptions{
+			ShowStdout: true,
 		}
-	case status := <-statusCh:
-		if status.Error != nil {
-			return errors.New(status.Error.Message)
-		} else {
+		logsReader, err := s.cli.ContainerLogs(ctx, createRes.ID, logsOptions)
+		if err != nil {
+			panic(err)
+		}
+
+		buf := new(bytes.Buffer)
+		_, err = io.Copy(buf, logsReader)
+		if err != nil {
+			panic(err)
+		}
+		log.Println("ca容器日志:", buf.String())
+		if strings.Contains(buf.String(), "Listening on") {
+			fmt.Println("Container is ready")
 			return nil
+		} else {
+			continue
 		}
 	}
-	return nil
 }
 
 func (s *caService) GenConfig(ctx context.Context) (*container.Config, *container.HostConfig) {
@@ -162,6 +173,9 @@ func (s *caService) GenConfig(ctx context.Context) (*container.Config, *containe
 			Memory:    536870912,
 		},
 		NetworkMode: "fabric_network",
+		RestartPolicy: container.RestartPolicy{
+			Name: "always",
+		},
 	}
 
 	return containerConfig, hostConfig

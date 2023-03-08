@@ -94,9 +94,9 @@ func (p *peerService) GenConfig(ctx context.Context) (*container.Config, *contai
 	chaincodeListenAddress := fmt.Sprintf("CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:%d", p.ccport)
 	gossipBootstrapAddress := fmt.Sprintf("CORE_PEER_GOSSIP_BOOTSTRAP=%s", p.bootstrapAddress)
 	gossipEndpoint := fmt.Sprintf("CORE_PEER_GOSSIP_EXTERNALENDPOINT=%s:%s", p.serverDomain, p.Port)
-	couchAddress := fmt.Sprintf("CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=%s:%d", "couch."+p.serverName+".com", p.dbport)
+	couchAddress := fmt.Sprintf("CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=%s:%d", "couch."+p.serverName+".com", 5984)
 	couchUser := fmt.Sprintf("CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin")
-	couchPw := fmt.Sprintf("CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=txhy2022com")
+	couchPw := fmt.Sprintf("CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw")
 
 	portset := p.buildContainerPorts()
 	portbinding := p.buildContainerPortBindingOptions()
@@ -157,8 +157,7 @@ func (p *peerService) GenConfig(ctx context.Context) (*container.Config, *contai
 			Memory:    536870912,
 		},
 		RestartPolicy: container.RestartPolicy{
-			Name:              "always",
-			MaximumRetryCount: 10,
+			Name: "always",
 		},
 	}
 

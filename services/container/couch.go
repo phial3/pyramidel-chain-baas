@@ -25,14 +25,14 @@ type couchService struct {
 
 func (c *couchService) buildContainerPorts() nat.PortSet {
 	ports := nat.PortSet{}
-	p := nat.Port(fmt.Sprintf("%d/%s", c.port, "tcp"))
+	p := nat.Port(fmt.Sprintf("%d/%s", 5984, "tcp"))
 	ports[p] = struct{}{}
 	return ports
 }
 
 func (c *couchService) buildContainerPortBindingOptions() nat.PortMap {
 	bindings := nat.PortMap{}
-	p := nat.Port(fmt.Sprintf("%d/%s", c.port, "tcp")) // chaincode port
+	p := nat.Port(fmt.Sprintf("%d/%s", 5984, "tcp")) // chaincode port
 	hostp := fmt.Sprintf("%d", c.port)
 	binding := nat.PortBinding{
 		HostIP:   "0.0.0.0",
