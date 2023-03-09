@@ -147,3 +147,16 @@ func (c *memberController) DownloadKeyStore(ctx *gin.Context) {
 	ctx.File(keyPath)
 	return
 }
+
+func (c *memberController) DownloadCert(ctx *gin.Context) {
+	param := &DownloadKS{}
+	if err := ctx.ShouldBindJSON(param); err != nil {
+		response.Error(ctx, err)
+		log.Println("31:::::::::::::::::::::Error: ", err)
+		return
+	}
+
+	certPwd := fmt.Sprintf("/root/txhyjuicefs/organizations/%s/users/%s@%s.pcb.com/msp/signcerts/cert.pem", param.Uscc, param.Name, param.Uscc)
+	ctx.File(certPwd)
+	return
+}
