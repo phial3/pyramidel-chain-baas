@@ -20,7 +20,7 @@ ca_client_home=/root/txhyjuicefs/organizations/fabric-ca/$uscc
 org_dir=/root/txhyjuicefs/organizations/$uscc
 user_home=/root/txhyjuicefs/organizations/$uscc/users/$username@$uscc.pcb.com
 
-fabric-ca-client enroll -d -u https://admin:$uscc@localhost:$ca_port --caname ca-$uscc --tls.certfiles ca_client_home/ca-cert.pem
+fabric-ca-client enroll -d -u https://admin:$uscc@localhost:$ca_port --caname ca-$uscc --tls.certfiles $ca_client_home/ca-cert.pem
 # Register user with CA
 fabric-ca-client register -d --caname $ca_name --id.name $username --id.secret $password --id.type $type --tls.certfiles $ca_client_home/ca-cert.pem
 

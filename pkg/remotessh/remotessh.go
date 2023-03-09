@@ -150,3 +150,14 @@ func RegisterUser(client *goph.Client, uscc, username, pw, utype, port string) e
 
 	return nil
 }
+
+func RevokeUser(client *goph.Client, uscc, username, port string) error {
+	cmd := fmt.Sprintf("cd ~ && ./txhyjuicefs/scripts/revokeuser.sh %s %s %s", uscc, username, port)
+	out, err := client.Run(cmd)
+	log.Println(string(out))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

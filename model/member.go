@@ -12,7 +12,7 @@ type Member struct {
 	organization   Organization `json:"-" gorm:"foreignKey:OrganizationId"`
 	IsFrozen       bool         `json:"IsFrozen" gorm:"column:IsFrozen"`     // 是否冻结默认为false
 	Uscc           string       `json:"orgUscc" binding:"required" gorm:"-"` // 组织唯一标识
-	Token          string       `json:"token" gorm:"column:token"`           // sm2withsm3 token
+	Token          string       `json:"token" gorm:"column:token;type:text"` // sm2withsm3 token
 }
 
 func (Member) TableName() string {
@@ -30,21 +30,22 @@ func (m *Member) Create() error {
 	return nil
 }
 
-func (Member) Update(name string, uscc string, columns map[string]interface{}) error {
+func (Member) Update(name string, orgid uint, columns map[string]interface{}) error {
 	tx := db.Session(&gorm.Session{
 		SkipDefaultTransaction: true,
 	})
-	if err := tx.Where("name = ? & uscc = ?", name, uscc).UpdateColumns(columns).Error; err != nil {
+	if err := tx.Model(&Member{}).Where("name = ? AND organizationId = ?", name, orgid).UpdateColumns(columns).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (Member) FindByNameAndUscc(name string, uscc string, result interface{}) error {
+func (M *Member) DeleteByUsccAndName(orgid uint, name string) error {
 	tx := db.Session(&gorm.Session{
 		SkipDefaultTransaction: true,
 	})
-	if err := tx.Where("name = ? & uscc = ?", name, uscc).First(result).Error; err != nil {
+	err := tx.Where("organizationId = ? AND name = ?", orgid, name).Delete(&Member{}).Error
+	if err != nil {
 		return err
 	}
 	return nil

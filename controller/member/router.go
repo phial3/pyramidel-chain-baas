@@ -9,4 +9,5 @@ func Routers(e *gin.RouterGroup) {
 	routerG.POST("/downloadCert", member.DownloadCert)
 	routerG.POST("/updateFrozenStatus", member.UpdateFrozenStatus)
 	routerG.POST("/regenerateToken", member.RegenerateToken)
+	routerG.POST("/revoke", member.revokeUser)
 }

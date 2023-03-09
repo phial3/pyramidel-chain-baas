@@ -175,11 +175,26 @@ func (c *memberController) UpdateFrozenStatus(ctx *gin.Context) {
 		log.Println("31:::::::::::::::::::::Error: ", err)
 		return
 	}
+	var result []model.Organization
+	org := model.Organization{}
+	if err := org.FindByUscc(param.Uscc, &result); err != nil {
+		response.Error(ctx, err)
+		return
+	}
+
+	if len(result) <= 0 {
+		response.Error(ctx, errors.New("organization not found"))
+		return
+	}
+	frozen := 0
+	if *param.IsFrozen {
+		frozen = 1
+	}
 	columns := map[string]interface{}{
-		"IsFrozen": param.IsFrozen,
+		"IsFrozen": frozen,
 	}
 	memRepo := model.Member{}
-	if err := memRepo.Update(param.Name, param.Uscc, columns); err != nil {
+	if err := memRepo.Update(param.Name, result[0].ID, columns); err != nil {
 		response.Error(ctx, err)
 		return
 	}
@@ -226,14 +241,69 @@ func (c *memberController) RegenerateToken(ctx *gin.Context) {
 		return
 	}
 
-	columns := map[string]interface{}{
-		"token": token,
-	}
-	if err := memRepo.Update(param.Name, param.Uscc, columns); err != nil {
+	var result []model.Organization
+	org := model.Organization{}
+	if err := org.FindByUscc(param.Uscc, &result); err != nil {
 		response.Error(ctx, err)
 		return
 	}
 
-	response.Success(ctx, "", "regenerate token success")
+	if len(result) <= 0 {
+		response.Error(ctx, errors.New("organization not found"))
+		return
+	}
+
+	columns := map[string]interface{}{
+		"token": token,
+	}
+	if err := memRepo.Update(param.Name, result[0].ID, columns); err != nil {
+		response.Error(ctx, err)
+		return
+	}
+
+	response.Success(ctx, gin.H{"token": token}, "regenerate token success")
+	return
+}
+
+// revokeUser 吊销用户
+// TODO:在执行注销后更新channel配置，将crl添加到配置文件中.
+func (c *memberController) revokeUser(ctx *gin.Context) {
+	param := &revoke{}
+	if err := ctx.ShouldBindJSON(param); err != nil {
+		response.Error(ctx, err)
+		log.Println("31:::::::::::::::::::::Error: ", err)
+		return
+	}
+
+	// 注销证书
+	var result []model.Organization
+	org := model.Organization{}
+	if err := org.FindByUscc(param.Uscc, &result); err != nil {
+		response.Error(ctx, err)
+		return
+	}
+
+	if len(result) <= 0 {
+		response.Error(ctx, errors.New("organization not found"))
+		return
+	}
+
+	sshcli, err := remotessh.ConnectToHost(result[0].Host.Username, result[0].Host.Pw, result[0].Host.UseIp, result[0].Host.SSHPort)
+	if err != nil {
+		response.Error(ctx, err)
+		return
+	}
+	defer sshcli.Close()
+	if err := remotessh.RevokeUser(sshcli, param.Uscc, param.Name, strconv.Itoa(int(result[0].CaServerPort))); err != nil {
+		response.Error(ctx, err)
+		return
+	}
+
+	memrepo := &model.Member{}
+	if err := memrepo.DeleteByUsccAndName(result[0].ID, param.Name); err != nil {
+		response.Error(ctx, err)
+		return
+	}
+	response.Success(ctx, nil, "revoke user success")
 	return
 }
