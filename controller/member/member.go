@@ -80,6 +80,10 @@ func (c *memberController) New(ctx *gin.Context) {
 	switch param.StoreType {
 	case 2:
 		// 提供密钥证书下载链接
+		if err := param.Create(); err != nil {
+			response.Error(ctx, err)
+			return
+		}
 		response.Success(ctx, nil, "enroll user success")
 		return
 	case 1:
@@ -110,6 +114,7 @@ func (c *memberController) New(ctx *gin.Context) {
 			response.Error(ctx, err)
 			return
 		}
+		param.Token = token
 		if err := param.Create(); err != nil {
 			response.Error(ctx, err)
 			return
@@ -152,7 +157,6 @@ func (c *memberController) DownloadCert(ctx *gin.Context) {
 	param := &DownloadKS{}
 	if err := ctx.ShouldBindJSON(param); err != nil {
 		response.Error(ctx, err)
-		log.Println("31:::::::::::::::::::::Error: ", err)
 		return
 	}
 

@@ -12,6 +12,7 @@ type Member struct {
 	organization   Organization `json:"-" gorm:"foreignKey:OrganizationId"`
 	IsFrozen       bool         `json:"IsFrozen" gorm:"column:IsFrozen"`     // 是否冻结默认为false
 	Uscc           string       `json:"orgUscc" binding:"required" gorm:"-"` // 组织唯一标识
+	Token          string       `json:"token" gorm:"column:token"`           // sm2withsm3 token
 }
 
 func (Member) TableName() string {
