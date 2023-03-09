@@ -29,3 +29,23 @@ func (m *Member) Create() error {
 	}
 	return nil
 }
+
+func (Member) Update(name string, uscc string, columns map[string]interface{}) error {
+	tx := db.Session(&gorm.Session{
+		SkipDefaultTransaction: true,
+	})
+	if err := tx.Where("name = ? & uscc = ?", name, uscc).UpdateColumns(columns).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (Member) FindByNameAndUscc(name string, uscc string, result interface{}) error {
+	tx := db.Session(&gorm.Session{
+		SkipDefaultTransaction: true,
+	})
+	if err := tx.Where("name = ? & uscc = ?", name, uscc).First(result).Error; err != nil {
+		return err
+	}
+	return nil
+}

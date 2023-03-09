@@ -89,7 +89,9 @@ func (c *memberController) New(ctx *gin.Context) {
 	case 1:
 		// 根据申请到的证书生成token返回给用户
 		// 提供私钥下载链接
-		payloads := gmtoken.CreateStdPayloads(param.Name, "test", "anyone", "N0001", 10*365*24*60)
+		timestamp := time.Now().UnixNano()
+		jti := fmt.Sprintf("%s-%d", param.Uscc, timestamp)
+		payloads := gmtoken.CreateStdPayloads(param.Name, "test", "anyone", jti, 10*365*24*60)
 		mspdir := fmt.Sprintf("/root/txhyjuicefs/organizations/%s/users/%s@%s.pcb.com/msp/", param.Uscc, param.Name, param.Uscc)
 		keyDir := filepath.Join(mspdir, "keystore")
 		// there's a single file in this dir containing the private key
@@ -162,5 +164,76 @@ func (c *memberController) DownloadCert(ctx *gin.Context) {
 
 	certPwd := fmt.Sprintf("/root/txhyjuicefs/organizations/%s/users/%s@%s.pcb.com/msp/signcerts/cert.pem", param.Uscc, param.Name, param.Uscc)
 	ctx.File(certPwd)
+	return
+}
+
+// UpdateFrozenStatus 更新用户冻结状态
+func (c *memberController) UpdateFrozenStatus(ctx *gin.Context) {
+	param := &UpdateFrozen{}
+	if err := ctx.ShouldBindJSON(param); err != nil {
+		response.Error(ctx, err)
+		log.Println("31:::::::::::::::::::::Error: ", err)
+		return
+	}
+	columns := map[string]interface{}{
+		"IsFrozen": param.IsFrozen,
+	}
+	memRepo := model.Member{}
+	if err := memRepo.Update(param.Name, param.Uscc, columns); err != nil {
+		response.Error(ctx, err)
+		return
+	}
+	response.Success(ctx, "", "update frozen status success")
+	return
+}
+
+// RegenerateToken 重新生成token
+func (c *memberController) RegenerateToken(ctx *gin.Context) {
+	param := &RegenerateTokenReq{}
+	if err := ctx.ShouldBindJSON(param); err != nil {
+		response.Error(ctx, err)
+		log.Println("31:::::::::::::::::::::Error: ", err)
+		return
+	}
+
+	memRepo := model.Member{}
+	// 申请证书
+	timestamp := time.Now().UnixNano()
+	jti := fmt.Sprintf("%s-%d", param.Uscc, timestamp)
+	payloads := gmtoken.CreateStdPayloads(param.Name, "test", "anyone", jti, 10*365*24*60)
+	mspdir := fmt.Sprintf("/root/txhyjuicefs/organizations/%s/users/%s@%s.pcb.com/msp/", param.Uscc, param.Name, param.Uscc)
+	keyDir := filepath.Join(mspdir, "keystore")
+	// there's a single file in this dir containing the private key
+	files, err := ioutil.ReadDir(keyDir)
+	if err != nil {
+		response.Error(ctx, err)
+		return
+	}
+	if len(files) != 1 {
+		response.Error(ctx, fmt.Errorf("keystore folder should have contain one file"))
+		return
+	}
+	keyPath := filepath.Join(keyDir, files[0].Name())
+
+	privKey, err := x509.ReadPrivateKeyFromPemFile(keyPath, nil)
+	if err != nil {
+		response.Error(ctx, err)
+		return
+	}
+	token, err := gmtoken.BuildTokenWithGM(payloads, time.Time{}, privKey.(*sm2.PrivateKey))
+	if err != nil {
+		response.Error(ctx, err)
+		return
+	}
+
+	columns := map[string]interface{}{
+		"token": token,
+	}
+	if err := memRepo.Update(param.Name, param.Uscc, columns); err != nil {
+		response.Error(ctx, err)
+		return
+	}
+
+	response.Success(ctx, "", "regenerate token success")
 	return
 }

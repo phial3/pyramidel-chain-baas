@@ -7,4 +7,6 @@ func Routers(e *gin.RouterGroup) {
 	routerG.POST("/new", member.New)
 	routerG.POST("/downloadKS", member.DownloadKeyStore)
 	routerG.POST("/downloadCert", member.DownloadCert)
+	routerG.POST("/updateFrozenStatus", member.UpdateFrozenStatus)
+	routerG.POST("/regenerateToken", member.RegenerateToken)
 }
