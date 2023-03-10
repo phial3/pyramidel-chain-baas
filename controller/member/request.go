@@ -8,7 +8,7 @@ type DownloadKS struct {
 type UpdateFrozen struct {
 	Uscc     string `json:"uscc" binding:"required"`
 	Name     string `json:"name" binding:"required"`
-	IsFrozen *bool  `json:"isfrozen" binding:"required"`
+	IsFrozen *bool  `json:"IsFrozen" binding:"required"`
 } // 更新用户冻结状态
 
 type RegenerateTokenReq struct {
