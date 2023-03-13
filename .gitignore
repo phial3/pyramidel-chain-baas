@@ -37,3 +37,4 @@ config.yaml
 go_run_*
 *testdata/
 !/pkg/gmtoken/testdata/
+!/log/serve.log

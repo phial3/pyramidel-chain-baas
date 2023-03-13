@@ -12,3 +12,7 @@ type Consortium struct {
 	OrdererType   string `json:"orderer-type" gorm:"column:orderer-type"`     // 共识算法kafkaraft,etcdraft
 	// TODO:添加出块规则相关字段
 }
+
+func (Consortium) TableName() string {
+	return "consortium"
+}
