@@ -90,9 +90,9 @@ func (c *couchService) Close() error {
 
 func (c *couchService) Conn() error {
 	address := fmt.Sprintf("tcp://%s:%d", c.host, 2376)
-	cacertPath := fmt.Sprintf("/root/txhyjuicefs/%s/certs/ca.pem", c.publicIP)
-	certPath := fmt.Sprintf("/root/txhyjuicefs/%s/certs/client.pem", c.publicIP)
-	keyPath := fmt.Sprintf("/root/txhyjuicefs/%s/certs/client-key.pem", c.publicIP)
+	cacertPath := fmt.Sprintf("/txhyjuicefs/%s/certs/ca.pem", c.publicIP)
+	certPath := fmt.Sprintf("/txhyjuicefs/%s/certs/client.pem", c.publicIP)
+	keyPath := fmt.Sprintf("/txhyjuicefs/%s/certs/client-key.pem", c.publicIP)
 	cli, err := client.NewClientWithOpts(client.WithAPIVersionNegotiation(),
 		client.WithHost(address), client.WithTLSClientConfig(cacertPath, certPath, keyPath))
 	if err != nil {
@@ -121,7 +121,7 @@ func (c *couchService) GenConfig(ctx context.Context) (*container.Config, *conta
 		NetworkDisabled: false,
 	}
 
-	volumeBind := fmt.Sprintf("/root/txhyjuicefs/%s:/opt/couchdb/data", c.name)
+	volumeBind := fmt.Sprintf("/txhyjuicefs/%s:/opt/couchdb/data", c.name)
 	hostConfig := &container.HostConfig{
 		PortBindings: portbidng,
 		Binds: []string{

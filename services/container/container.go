@@ -100,9 +100,9 @@ func NewCaContainerService(host, ip, port, caUser, caPw, orgUscc, serverName, se
 func (s *caService) Conn() error {
 	address := fmt.Sprintf("tcp://%s:%d", s.Host, 2376)
 	log.Println(address)
-	cacertPath := fmt.Sprintf("/root/txhyjuicefs/%s/certs/ca.pem", s.PublicIP)
-	certPath := fmt.Sprintf("/root/txhyjuicefs/%s/certs/client.pem", s.PublicIP)
-	keyPath := fmt.Sprintf("/root/txhyjuicefs/%s/certs/client-key.pem", s.PublicIP)
+	cacertPath := fmt.Sprintf("/txhyjuicefs/%s/certs/ca.pem", s.PublicIP)
+	certPath := fmt.Sprintf("/txhyjuicefs/%s/certs/client.pem", s.PublicIP)
+	keyPath := fmt.Sprintf("/txhyjuicefs/%s/certs/client-key.pem", s.PublicIP)
 	cli, err := client.NewClientWithOpts(client.WithAPIVersionNegotiation(),
 		client.WithHost(address), client.WithTLSClientConfig(cacertPath, certPath, keyPath))
 	if err != nil {
@@ -155,7 +155,7 @@ func (s *caService) GenConfig(ctx context.Context) (*container.Config, *containe
 	portset := s.buildContainerPorts()
 	portbinding := s.buildContainerPortBindingOptions()
 	portenv := fmt.Sprintf("FABRIC_CA_SERVER_PORT=%s", s.Port)
-	binddir := fmt.Sprintf("/root/txhyjuicefs/organizations/fabric-ca/%s:/etc/hyperledger/fabric-ca-server", s.orgUscc)
+	binddir := fmt.Sprintf("/txhyjuicefs/organizations/fabric-ca/%s:/etc/hyperledger/fabric-ca-server", s.orgUscc)
 	user_pass := fmt.Sprintf("BOOTSTRAP_USER_PASS=%s:%s", s.caUser, s.caPw)
 	ca_server_name := fmt.Sprintf("FABRIC_CA_SERVER_CA_NAME=%s", s.serverName)
 	containerConfig := &container.Config{Image: "harbor.sxtxhy.com/gcbaas-gm/fabric-ca:latest", Cmd: []string{"sh", "-c", "/usr/local/bin/start_ca.sh"}, Env: []string{"FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server",

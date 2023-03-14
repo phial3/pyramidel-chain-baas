@@ -318,7 +318,7 @@ EOF
 }
 
 function juicefs::mount() {
-  juicefs mount --background --cache-size 512000 redis://:Txhy2020@39.100.224.84:7000/1 /root/txhyjuicefs
+  juicefs mount --background --cache-size 512000 redis://:Txhy2020@39.100.224.84:7000/1 /txhyjuicefs
 
   cp /usr/local/bin/juicefs /sbin/mount.juicefs
 
@@ -329,7 +329,7 @@ EOF
 }
 
 function psutil::up() {
-  cp /root/txhyjuicefs/systemd-service/psutil.service /etc/systemd/system
+  cp /txhyjuicefs/systemd-service/psutil.service /etc/systemd/system
   systemctl daemon-reload
   systemctl enable psutil.service
   systemctl start psutil.service

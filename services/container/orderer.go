@@ -59,9 +59,9 @@ func (o *ordererService) Close() error {
 
 func (o *ordererService) Conn() error {
 	address := fmt.Sprintf("tcp://%s:%d", o.host, 2376)
-	cacertPath := fmt.Sprintf("/root/txhyjuicefs/%s/certs/ca.pem", o.publicIP)
-	certPath := fmt.Sprintf("/root/txhyjuicefs/%s/certs/client.pem", o.publicIP)
-	keyPath := fmt.Sprintf("/root/txhyjuicefs/%s/certs/client-key.pem", o.publicIP)
+	cacertPath := fmt.Sprintf("/txhyjuicefs/%s/certs/ca.pem", o.publicIP)
+	certPath := fmt.Sprintf("/txhyjuicefs/%s/certs/client.pem", o.publicIP)
+	keyPath := fmt.Sprintf("/txhyjuicefs/%s/certs/client-key.pem", o.publicIP)
 	cli, err := client.NewClientWithOpts(client.WithAPIVersionNegotiation(),
 		client.WithHost(address), client.WithTLSClientConfig(cacertPath, certPath, keyPath))
 	if err != nil {
@@ -110,13 +110,13 @@ func (o *ordererService) GenConfig(ctx context.Context) (*container.Config, *con
 	volume, _ := o.cli.VolumeCreate(context.Background(), volume2.CreateOptions{
 		Name: o.serverDomain,
 	})
-	mspBind := fmt.Sprintf("/root/txhyjuicefs/organizations/%s/orderers/%s/msp:/etc/hyperledger/fabric/msp", o.orgUscc, o.serverDomain)
-	tlsBind := fmt.Sprintf("/root/txhyjuicefs/organizations/%s/orderers/%s/tls:/etc/hyperledger/fabric/tls", o.orgUscc, o.serverDomain)
+	mspBind := fmt.Sprintf("/txhyjuicefs/organizations/%s/orderers/%s/msp:/etc/hyperledger/fabric/msp", o.orgUscc, o.serverDomain)
+	tlsBind := fmt.Sprintf("/txhyjuicefs/organizations/%s/orderers/%s/tls:/etc/hyperledger/fabric/tls", o.orgUscc, o.serverDomain)
 	volumeBind := fmt.Sprintf("%s:/var/hyperledger/production/orderer", volume.Name)
 	hostConfig := &container.HostConfig{
 		PortBindings: portbinding,
 		Binds: []string{
-			"/root/txhyjuicefs/system-genesis-block/genesis.block:/var/hyperledger/orderer/orderer.genesis.block",
+			"/txhyjuicefs/system-genesis-block/genesis.block:/var/hyperledger/orderer/orderer.genesis.block",
 			mspBind,
 			tlsBind,
 			volumeBind,

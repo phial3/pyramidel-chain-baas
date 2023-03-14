@@ -6,7 +6,7 @@ if [ "$#" -ne 5 ]; then
   exit 1
 fi
 source /etc/profile
-export FABRIC_CA_CLIENT_HOME=/root/txhyjuicefs/organizations/fabric-ca/$1
+export FABRIC_CA_CLIENT_HOME=/txhyjuicefs/organizations/fabric-ca/$1
 
 
 # Define variables
@@ -16,9 +16,9 @@ password=$3
 type=$4
 ca_port=$5
 ca_name=ca-$uscc
-ca_client_home=/root/txhyjuicefs/organizations/fabric-ca/$uscc
-org_dir=/root/txhyjuicefs/organizations/$uscc
-user_home=/root/txhyjuicefs/organizations/$uscc/users/$username@$uscc.pcb.com
+ca_client_home=/txhyjuicefs/organizations/fabric-ca/$uscc
+org_dir=/txhyjuicefs/organizations/$uscc
+user_home=/txhyjuicefs/organizations/$uscc/users/$username@$uscc.pcb.com
 
 fabric-ca-client enroll -d -u https://admin:$uscc@localhost:$ca_port --caname ca-$uscc --tls.certfiles $ca_client_home/ca-cert.pem
 # Register user with CA
