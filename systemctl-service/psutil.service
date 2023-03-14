@@ -1,0 +1,14 @@
+[Unit]
+Description=psutil
+Requires=remote-fs.target
+After=remote-fs.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root
+ExecStart=/usr/bin/nohup /txhyjuicefs/psutil/linux/psutil -port=8082 -interval=10 >/root/psutil.log 2>&1 &
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

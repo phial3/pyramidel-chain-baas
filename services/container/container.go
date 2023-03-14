@@ -176,9 +176,9 @@ func (s *caService) GenConfig(ctx context.Context) (*container.Config, *containe
 		RestartPolicy: container.RestartPolicy{
 			Name: "always",
 		},
-		StorageOpt: map[string]string{
-			"size": "10G",
-		},
+		//StorageOpt: map[string]string{
+		//	"size": "10G",
+		//},
 	}
 
 	return containerConfig, hostConfig

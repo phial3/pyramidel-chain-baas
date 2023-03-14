@@ -2,10 +2,12 @@ package model
 
 type ConsortiumOrderer struct {
 	Base
-	OrganizationId uint `json:"organizationId" gorm:"column:organizationId"` // 组织
-	OrdererId      uint `json:"ordererId" gorm:"column:ordererId"`           // orderer id
+	OrdererId    uint       `json:"ordererId" gorm:"column:ordererId"`       // orderer id
+	Orderer      Orderer    `json:"orderer" gorm:"foreignKey:OrdererId"`     // 外键
+	ConsortiumId uint       `json:"consortiumId" gorm:"column:consortiumId"` // 所属联盟
+	Consortium   Consortium `json:"consortium" gorm:"foreignKey:ConsortiumId"`
 }
 
 func (ConsortiumOrderer) TableName() string {
-	return "consortium_orderer"
+	return "baas_consortium_orderer"
 }

@@ -2,11 +2,13 @@ package model
 
 type ConsortiumPeer struct {
 	Base
-	OrganizationId uint `json:"organizationId" gorm:"column:organizationId"` // 组织
-	PeerId         uint `json:"peerId" gorm:"column:peerId"`                 // 节点id
-	AAEStatus      bool `json:"status" gorm:"column:status"`                 // 是否准入准出
+	PeerId       uint       `json:"peerId" gorm:"column:peerId"`               // 节点id
+	Peer         Peer       `json:"peer" gorm:"column:PeerId"`                 // peer外键
+	ConsortiumId uint       `json:"consortiumId" gorm:"column:consortiumId"`   // 所属联盟
+	Consortium   Consortium `json:"consortium" gorm:"foreignKey:ConsortiumId"` // 外键
+	SyncBlock    int        `json:"syncBlock" gorm:"column:syncBlock"`         // 是否准入准出
 }
 
 func (ConsortiumPeer) TableName() string {
-	return "consortium_peer"
+	return "baas_consortium_peer"
 }

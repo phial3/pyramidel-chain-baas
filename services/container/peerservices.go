@@ -139,6 +139,9 @@ func (p *peerService) GenConfig(ctx context.Context) (*container.Config, *contai
 	// 创建卷
 	volume, _ := p.cli.VolumeCreate(context.Background(), volume2.CreateOptions{
 		Name: p.serverDomain,
+		DriverOpts: map[string]string{
+			"size": "10g",
+		},
 	})
 	mspBind := fmt.Sprintf("/root/txhyjuicefs/organizations/%s/peers/%s/msp:/etc/hyperledger/fabric/msp", p.orgUscc, p.serverDomain)
 	tlsBind := fmt.Sprintf("/root/txhyjuicefs/organizations/%s/peers/%s/tls:/etc/hyperledger/fabric/tls", p.orgUscc, p.serverDomain)

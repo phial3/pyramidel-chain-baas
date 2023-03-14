@@ -323,17 +323,15 @@ function juicefs::mount() {
   cp /usr/local/bin/juicefs /sbin/mount.juicefs
 
   cat >>/etc/fstab <<EOF
-redis://:Txhy2020@39.100.224.84:7000/1    ~/txhyjuicefs       juicefs     _netdev,max-uploads=50,writeback,cache-size=512000     0  0
+redis://:Txhy2020@39.100.224.84:7000/1    /txhyjuicefs       juicefs     _netdev,max-uploads=50,writeback,cache-size=512000     0  0
 EOF
 }
 
 function psutil::up() {
-  if [ -f /root/txhyjuicefs/psutil/linux/psutil ]; then
-    cat >>/etc/rc.local <<EOF
-nohup /root/txhyjuicefs/psutil/linux/psutil -port=8082 -interval=10 >/root/psutil.log 2>&1 &
-EOF
-    nohup /root/txhyjuicefs/psutil/linux/psutil -port=8082 -interval=10 >/root/psutil.log 2>&1 &
-  fi
+  cp /root/txhyjuicefs/systemd-service/psutil.service /etc/systemd/system
+  systemctl daemon-reload
+  systemctl enable psutil.service
+  systemctl start psutil.service
   netstat -nultp | grep 8082
 }
 
