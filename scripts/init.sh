@@ -325,6 +325,7 @@ function juicefs::mount() {
   cat >>/etc/fstab <<EOF
 redis://:Txhy2020@39.100.224.84:7000/1    /txhyjuicefs       juicefs     _netdev,max-uploads=50,writeback,cache-size=512000     0  0
 EOF
+  mount -a
 }
 
 function psutil::up() {
