@@ -93,7 +93,7 @@ func Ping(ip string) int64 {
 		sshLogger.Error("Ping ip %s failed", zap.Error(err))
 		return 0
 	}
-	//pinger.SetPrivileged(false)
+	pinger.SetPrivileged(true)
 	pinger.Count = 3
 	pinger.Timeout = time.Second * 3
 	err = pinger.Run() // Blocks until finished.
