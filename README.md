@@ -27,3 +27,13 @@ docker --tlsverify --tlscacert=ca.pem --tlscert=client.pem --tlskey=client-key.p
 ## pro-bing centos需要修改udp socket ping范围
 
 sudo sysctl -w net.ipv4.ping_group_range="0 2147483647"
+
+## harbor镜像拉取
+
+docker pull harbor.sxtxhy.com/gcbaas-gm/fabric-tools:latest
+docker pull harbor.sxtxhy.com/gcbaas-gm/fabric-ca:latest
+docker pull harbor.sxtxhy.com/gcbaas-gm/fabric-peer:latest
+docker pull harbor.sxtxhy.com/gcbaas-gm/fabric-orderer:latest
+docker pull harbor.sxtxhy.com/gcbaas-gm/fabric-ccenv:latest
+docker pull harbor.sxtxhy.com/gcbaas-gm/fabric-baseos:latest
+docker pull harbor.sxtxhy.com/gcbaas-gm/couchdb:3.1.1

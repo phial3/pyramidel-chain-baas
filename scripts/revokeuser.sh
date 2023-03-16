@@ -7,7 +7,7 @@ if [ "$#" -ne 3 ]; then
 fi
 
 source /etc/profile
-export FABRIC_CA_CLIENT_HOME=/txhyjuicefs/organizations/fabric-ca/$1
+export FABRIC_CA_CLIENT_HOME=/root/txhyjuicefs/organizations/fabric-ca/$1
 
 # Define variables
 uscc=$1

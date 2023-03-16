@@ -7,10 +7,10 @@ ORG_NAME=$1
 PEER_NAME=$2
 PEER_DOMAIN=$3
 PORT=$4
-CA_CLIENT_HOME=/txhyjuicefs/organizations/fabric-ca/$ORG_NAME
-PEERS_DIR=/txhyjuicefs/organizations/$ORG_NAME/peers
+CA_CLIENT_HOME=/root/txhyjuicefs/organizations/fabric-ca/$ORG_NAME
+PEERS_DIR=/root/txhyjuicefs/organizations/$ORG_NAME/peers
 PEER_DIR=$PEERS_DIR/$PEER_DOMAIN
-ORG_DIR=/txhyjuicefs/organizations/$ORG_NAME
+ORG_DIR=/root/txhyjuicefs/organizations/$ORG_NAME
 
 # Set environment variables
 export FABRIC_CA_CLIENT_HOME=$CA_CLIENT_HOME

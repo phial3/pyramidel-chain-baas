@@ -118,7 +118,7 @@ func EnrollBootstrapCa(client *goph.Client, uscc, port string) error {
 }
 
 func RegisterPeer(client *goph.Client, uscc, name, domain, port string) error {
-	cmd := fmt.Sprintf("cd ~ && ./txhyjuicefs/scripts/registerpeer.sh %s %s %s %s", uscc, name, domain, port)
+	cmd := fmt.Sprintf("/root/txhyjuicefs/scripts/registerpeer.sh %s %s %s %s", uscc, name, domain, port)
 	out, err := client.Run(cmd)
 	log.Println(cmd)
 	sshLogger.Debug(string(out))

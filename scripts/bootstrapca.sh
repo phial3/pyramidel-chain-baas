@@ -9,8 +9,8 @@ source /etc/profile
 # 设置变量
 org_name=$1
 port=$2
-ca_client_home=/txhyjuicefs/organizations/fabric-ca/$org_name
-org_dir=/txhyjuicefs/organizations/$org_name
+ca_client_home=/root/txhyjuicefs/organizations/fabric-ca/$org_name
+org_dir=/root/txhyjuicefs/organizations/$org_name
 
 export FABRIC_CA_CLIENT_HOME=ca_client_home
 

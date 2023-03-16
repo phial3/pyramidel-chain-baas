@@ -6,10 +6,10 @@ ORG_NAME=$1
 ORDERER_NAME=$2
 ORDERER_DOMAIN=$3
 PORT=$4
-CA_CLIENT_HOME=/txhyjuicefs/organizations/fabric-ca/$ORG_NAME
-ORDERERS_DIR=/txhyjuicefs/organizations/$ORG_NAME/orderers
-ORDERER_DIR=/txhyjuicefs/organizations/$ORG_NAME/orderers/$ORDERER_DOMAIN
-ORG_DIR=/txhyjuicefs/organizations/$ORG_NAME
+CA_CLIENT_HOME=/root/txhyjuicefs/organizations/fabric-ca/$ORG_NAME
+ORDERERS_DIR=/root/txhyjuicefs/organizations/$ORG_NAME/orderers
+ORDERER_DIR=/root/txhyjuicefs/organizations/$ORG_NAME/orderers/$ORDERER_DOMAIN
+ORG_DIR=/root/txhyjuicefs/organizations/$ORG_NAME
 
 # Set environment variables
 export FABRIC_CA_CLIENT_HOME=$CA_CLIENT_HOME

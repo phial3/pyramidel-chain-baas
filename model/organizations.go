@@ -286,7 +286,7 @@ func (o *Organization) Create(param organizations.Organizations, balancer loadba
 				}
 				log.Println(port, dbport, ccport)
 				// 启动peer节点
-				peerServe := container.NewPeerService(host.PublicIp, host.PublicIp, strconv.Itoa(port), o.Uscc, name, domain, dbport, ccport)
+				peerServe := container.NewPeerService(host.UseIp, host.PublicIp, strconv.Itoa(port), o.Uscc, name, domain, dbport, ccport)
 				if err := peerServe.Conn(); err != nil {
 					//tx.Rollback()
 					//peer.Status = 0

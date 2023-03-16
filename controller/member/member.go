@@ -92,7 +92,7 @@ func (c *memberController) New(ctx *gin.Context) {
 		timestamp := time.Now().UnixNano()
 		jti := fmt.Sprintf("%s-%d", param.Uscc, timestamp)
 		payloads := gmtoken.CreateStdPayloads(param.Name, "test", "anyone", jti, 10*365*24*60)
-		mspdir := fmt.Sprintf("/txhyjuicefs/organizations/%s/users/%s@%s.pcb.com/msp/", param.Uscc, param.Name, param.Uscc)
+		mspdir := fmt.Sprintf("/root/txhyjuicefs/organizations/%s/users/%s@%s.pcb.com/msp/", param.Uscc, param.Name, param.Uscc)
 		keyDir := filepath.Join(mspdir, "keystore")
 		// there's a single file in this dir containing the private key
 		files, err := ioutil.ReadDir(keyDir)
@@ -137,7 +137,7 @@ func (c *memberController) DownloadKeyStore(ctx *gin.Context) {
 		return
 	}
 
-	mspdir := fmt.Sprintf("/txhyjuicefs/organizations/%s/users/%s@%s.pcb.com/msp/", param.Uscc, param.Name, param.Uscc)
+	mspdir := fmt.Sprintf("/root/txhyjuicefs/organizations/%s/users/%s@%s.pcb.com/msp/", param.Uscc, param.Name, param.Uscc)
 	keyDir := filepath.Join(mspdir, "keystore")
 	// there's a single file in this dir containing the private key
 	files, err := ioutil.ReadDir(keyDir)
@@ -162,7 +162,7 @@ func (c *memberController) DownloadCert(ctx *gin.Context) {
 		return
 	}
 
-	certPwd := fmt.Sprintf("/txhyjuicefs/organizations/%s/users/%s@%s.pcb.com/msp/signcerts/cert.pem", param.Uscc, param.Name, param.Uscc)
+	certPwd := fmt.Sprintf("/root/txhyjuicefs/organizations/%s/users/%s@%s.pcb.com/msp/signcerts/cert.pem", param.Uscc, param.Name, param.Uscc)
 	ctx.File(certPwd)
 	return
 }
@@ -216,7 +216,7 @@ func (c *memberController) RegenerateToken(ctx *gin.Context) {
 	timestamp := time.Now().UnixNano()
 	jti := fmt.Sprintf("%s-%d", param.Uscc, timestamp)
 	payloads := gmtoken.CreateStdPayloads(param.Name, "test", "anyone", jti, 10*365*24*60)
-	mspdir := fmt.Sprintf("/txhyjuicefs/organizations/%s/users/%s@%s.pcb.com/msp/", param.Uscc, param.Name, param.Uscc)
+	mspdir := fmt.Sprintf("/root/txhyjuicefs/organizations/%s/users/%s@%s.pcb.com/msp/", param.Uscc, param.Name, param.Uscc)
 	keyDir := filepath.Join(mspdir, "keystore")
 	// there's a single file in this dir containing the private key
 	files, err := ioutil.ReadDir(keyDir)

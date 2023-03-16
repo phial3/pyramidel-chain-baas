@@ -15,12 +15,20 @@ type NewReq struct {
 }
 
 type Org struct {
-	Role        string   `json:"role"` // 组织联盟权限
-	CommitTx    bool     `json:"commitTx"`
-	TxSignature bool     `json:"txSignature"`
-	Orderer     []string `json:"orderer"`
-	Peer        []struct {
-		Domain    string `json:"domain"`
-		SyncBlock int    `json:"syncBlock"`
-	} `json:"peer"`
+	Role        string    `json:"role"` // 组织联盟权限
+	CommitTx    bool      `json:"commitTx"`
+	TxSignature bool      `json:"txSignature"`
+	Orderer     []orderer `json:"orderer"`
+	Peer        []peer    `json:"peer"`
+}
+
+type orderer struct {
+	Domain   string `json:"domain"`
+	NodePort string `json:"nodePort"`
+}
+
+type peer struct {
+	Domain    string `json:"domain"`
+	NodePort  string `json:"nodePort"`
+	SyncBlock int    `json:"syncBlock"`
 }

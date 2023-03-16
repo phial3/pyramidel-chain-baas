@@ -72,9 +72,9 @@ func (p *peerService) Close() error {
 
 func (p *peerService) Conn() error {
 	address := fmt.Sprintf("tcp://%s:%d", p.Host, 2376)
-	cacertPath := fmt.Sprintf("/txhyjuicefs/%s/certs/ca.pem", p.PublicIP)
-	certPath := fmt.Sprintf("/txhyjuicefs/%s/certs/client.pem", p.PublicIP)
-	keyPath := fmt.Sprintf("/txhyjuicefs/%s/certs/client-key.pem", p.PublicIP)
+	cacertPath := fmt.Sprintf("/root/txhyjuicefs/%s/certs/ca.pem", p.PublicIP)
+	certPath := fmt.Sprintf("/root/txhyjuicefs/%s/certs/client.pem", p.PublicIP)
+	keyPath := fmt.Sprintf("/root/txhyjuicefs/%s/certs/client-key.pem", p.PublicIP)
 	log.Println(address, cacertPath)
 	cli, err := client.NewClientWithOpts(client.WithAPIVersionNegotiation(),
 		client.WithHost(address), client.WithTLSClientConfig(cacertPath, certPath, keyPath))
@@ -137,14 +137,14 @@ func (p *peerService) GenConfig(ctx context.Context) (*container.Config, *contai
 	}
 
 	// 创建卷
-	volume, _ := p.cli.VolumeCreate(context.Background(), volume2.CreateOptions{
+	volume, err := p.cli.VolumeCreate(context.Background(), volume2.CreateOptions{
 		Name: p.serverDomain,
-		DriverOpts: map[string]string{
-			"size": "10g",
-		},
 	})
-	mspBind := fmt.Sprintf("/txhyjuicefs/organizations/%s/peers/%s/msp:/etc/hyperledger/fabric/msp", p.orgUscc, p.serverDomain)
-	tlsBind := fmt.Sprintf("/txhyjuicefs/organizations/%s/peers/%s/tls:/etc/hyperledger/fabric/tls", p.orgUscc, p.serverDomain)
+	if err != nil {
+		panic(err)
+	}
+	mspBind := fmt.Sprintf("/root/txhyjuicefs/organizations/%s/peers/%s/msp:/etc/hyperledger/fabric/msp", p.orgUscc, p.serverDomain)
+	tlsBind := fmt.Sprintf("/root/txhyjuicefs/organizations/%s/peers/%s/tls:/etc/hyperledger/fabric/tls", p.orgUscc, p.serverDomain)
 	volumeBind := fmt.Sprintf("%s:/var/hyperledger/production", volume.Name)
 	hostConfig := &container.HostConfig{
 		PortBindings: portbinding,

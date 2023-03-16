@@ -1,6 +1,10 @@
 package configtxgen
 
-import "time"
+import (
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	"time"
+)
 
 const (
 	// The type key for etcd based RAFT consensus.
@@ -132,37 +136,13 @@ type Orderer struct {
 // BatchSize contains configuration affecting the size of batches.
 type BatchSize struct {
 	MaxMessageCount   uint32 `yaml:"MaxMessageCount"`
-	AbsoluteMaxBytes  uint32 `yaml:"AbsoluteMaxBytes"`
-	PreferredMaxBytes uint32 `yaml:"PreferredMaxBytes"`
+	AbsoluteMaxBytes  string `yaml:"AbsoluteMaxBytes"`
+	PreferredMaxBytes string `yaml:"PreferredMaxBytes"`
 }
 
 // Kafka contains configuration for the Kafka-based orderer.
 type Kafka struct {
 	Brokers []string `yaml:"Brokers"`
-}
-
-var genesisDefaults = TopLevel{
-	Orderer: &Orderer{
-		OrdererType:  "solo",
-		BatchTimeout: 2 * time.Second,
-		BatchSize: BatchSize{
-			MaxMessageCount:   500,
-			AbsoluteMaxBytes:  10 * 1024 * 1024,
-			PreferredMaxBytes: 2 * 1024 * 1024,
-		},
-		Kafka: Kafka{
-			Brokers: []string{"127.0.0.1:9092"},
-		},
-		EtcdRaft: &ConfigMetadata{
-			Options: &Options{
-				TickInterval:         "500ms",
-				ElectionTick:         10,
-				HeartbeatTick:        1,
-				MaxInflightBlocks:    5,
-				SnapshotIntervalSize: 16 * 1024 * 1024, // 16 MB
-			},
-		},
-	},
 }
 
 // ConfigMetadata is serialized and set as the value of ConsensusType.Metadata in
@@ -179,8 +159,8 @@ type ConfigMetadata struct {
 type Consenter struct {
 	Host                 string   `json:"host,omitempty"`
 	Port                 uint32   `json:"port,omitempty"`
-	ClientTlsCert        []byte   `json:"client_tls_cert,omitempty"`
-	ServerTlsCert        []byte   `json:"server_tls_cert,omitempty"`
+	ClientTlsCert        string   `json:"client_tls_cert,omitempty"`
+	ServerTlsCert        string   `json:"server_tls_cert,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -200,6 +180,15 @@ type Options struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func GenConfigtxConfig() TopLevel {
-	return TopLevel{}
+func ReadTemplateFile() (*TopLevel, error) {
+	temCfg := &TopLevel{}
+	data, err := ioutil.ReadFile("/root/pyramidel-chain-baas/sampleconfig/configtx-template.yaml")
+	if err != nil {
+		return temCfg, err
+	}
+
+	if err := yaml.Unmarshal(data, temCfg); err != nil {
+		return temCfg, err
+	}
+	return temCfg, nil
 }
