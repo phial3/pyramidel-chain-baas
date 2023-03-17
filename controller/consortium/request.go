@@ -17,7 +17,7 @@ type NewReq struct {
 type Org struct {
 	Role        string    `json:"role"` // 组织联盟权限
 	CommitTx    bool      `json:"commitTx"`
-	TxSignature bool      `json:"txSignature"`
+	TxSignature int       `json:"txSignature"`
 	Orderer     []orderer `json:"orderer"`
 	Peer        []peer    `json:"peer"`
 }
@@ -30,5 +30,5 @@ type orderer struct {
 type peer struct {
 	Domain    string `json:"domain"`
 	NodePort  string `json:"nodePort"`
-	SyncBlock int    `json:"syncBlock"`
+	SyncBlock bool   `json:"syncBlock"`
 }

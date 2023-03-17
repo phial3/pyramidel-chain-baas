@@ -1,10 +1,15 @@
 package consortium
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/hxx258456/pyramidel-chain-baas/pkg/configtxgen"
 	"github.com/hxx258456/pyramidel-chain-baas/pkg/response"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	"os"
 	"strconv"
+	"time"
 )
 
 var consortium = newConsortiumController()
@@ -82,6 +87,40 @@ func (c *consortiumController) New(ctx *gin.Context) {
 
 	temCfg.Orderer.EtcdRaft.Consenters = consenters
 	temCfg.Orderer.Organizations = organizations
+
+	profiles := map[string]*configtxgen.Profile{}
+	temCfg.Application.Organizations = organizations
+	temCfg.Application.Capabilities = map[string]bool{"V2_0": true}
+	profiles["ApplicationChannel"] = &configtxgen.Profile{
+		Consortium:  "SampleConsortium",
+		Application: temCfg.Application,
+	}
+	cfg := configtxgen.TopLevel{
+		Profiles:      profiles,
+		Organizations: organizations,
+	}
+
+	bytes, err := yaml.Marshal(&cfg)
+	if err != nil {
+		response.Error(ctx, err)
+		return
+	}
+
+	if err := os.MkdirAll("/root/txhyjuicefs/configtxs/"+params.Initiator+"/", os.ModeDir); err != nil {
+		response.Error(ctx, err)
+		return
+	}
+	channelId := fmt.Sprintf("%s_%d", params.Initiator, time.Now().UnixNano())
+	filename := fmt.Sprintf("/root/txhyjuicefs/configtxs/%s/%s.yaml", params.Initiator, channelId)
+	if err := ioutil.WriteFile(filename, bytes, 0644); err != nil {
+		response.Error(ctx, err)
+		return
+	}
+	response.Success(ctx, gin.H{
+		"ChannelId": channelId,
+		"configtx":  cfg,
+	}, "")
+	return
 }
 
 func (c *consortiumController) Update(ctx *gin.Context) {

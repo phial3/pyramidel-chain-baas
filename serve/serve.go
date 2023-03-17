@@ -3,6 +3,7 @@ package serve
 import (
 	"context"
 	"github.com/gin-gonic/gin"
+	"github.com/hxx258456/pyramidel-chain-baas/controller/consortium"
 	"github.com/hxx258456/pyramidel-chain-baas/controller/host"
 	"github.com/hxx258456/pyramidel-chain-baas/controller/member"
 	"github.com/hxx258456/pyramidel-chain-baas/controller/orgnizations"
@@ -27,7 +28,7 @@ func Serve() {
 
 	//r.Use(whiteListIp(&localconfig.Defaultconfig.Serve), logger.GinLogger(ginLogger, &localconfig.Defaultconfig.Logger), logger.RecoveryWithZap(ginLogger, true))
 	r.Use(logger.GinLogger(ginLogger, &localconfig.Defaultconfig.Logger), logger.RecoveryWithZap(ginLogger, true))
-	routers.Include(host.Routers, orgnizations.Routers, peer.Routers, member.Routers)
+	routers.Include(host.Routers, orgnizations.Routers, peer.Routers, member.Routers, consortium.Routers)
 	routers.Init(r)
 	zap.L().Info(" ", zap.String("version", version.Version))
 	srv := http.Server{
