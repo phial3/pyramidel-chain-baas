@@ -140,7 +140,7 @@ EOF
     },
     "storage-driver": "devicemapper",
     "storage-opts": [
-      "dm.basesize=20G"
+      "dm.basesize=10G"
     ],
     "default-ulimits": {
         "nofile": {
