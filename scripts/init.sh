@@ -138,6 +138,10 @@ EOF
         "max-size": "200m",
         "max-file": "5"
     },
+    "storage-driver": "devicemapper",
+    "storage-opts": [
+      "dm.basesize=20G"
+    ],
     "default-ulimits": {
         "nofile": {
             "Name": "nofile",
@@ -154,10 +158,6 @@ EOF
     "oom-score-adjust": -1000,
     "max-concurrent-downloads": 10,
     "max-concurrent-uploads": 10,
-    "storage-driver": "overlay2",
-    "storage-opts": [
-        "overlay2.override_kernel_check=true"
-    ],
     "exec-opts": [
         "native.cgroupdriver=systemd"
     ],
